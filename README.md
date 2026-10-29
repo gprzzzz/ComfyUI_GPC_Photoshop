@@ -40,9 +40,9 @@ blended in, at full resolution.
 
 ![Soft trees before and after an SDXL refine](docs/images/example-refine.jpg)
 
-**Upscale** 4× with Z-Image Turbo: a 256 px wide detail, enlarged plainly and upscaled
+**Upscale** 2× with Z-Image Turbo: the same small area of the photo, before and after
 
-![The small original enlarged next to the Z-Image upscale: stone, garage doors and shrubs come out sharp](docs/images/example-upscale.jpg)
+![A detail of the original next to the Z-Image 2× upscale: stone, window frame and shrubs come out sharp](docs/images/example-upscale.jpg)
 
 **Magnific** with Nano Banana 2.1: "Turn this into a night photograph: deep blue sky after dusk, warm
 light glowing from every window, the porch light on, soft landscape lights along the walk…"

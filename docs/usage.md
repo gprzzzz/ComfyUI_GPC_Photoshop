@@ -94,7 +94,7 @@ for adding realism, texture and light to a rough render or a weak area.
 - Tiny symbols and lettering (a flag's emblem, a sign) can come out changed, especially from a small
   source image. Lower **Strength** to 0.2 for those, or keep the original there with a layer mask.
 
-![A 256 px wide detail enlarged plainly and with a 4× Z-Image upscale: stone, garage doors and shrubs come out sharp](images/example-upscale.jpg)
+![A detail of the original next to the Z-Image 2× upscale: stone, window frame and shrubs come out sharp](images/example-upscale.jpg)
 
 ## Magnific (Nano Banana)
 
