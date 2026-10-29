@@ -1,0 +1,14 @@
+[project]
+name = "comfyui-gpc-photoshop"
+description = "Edit, refine and upscale in Photoshop with your own ComfyUI workflows (Flux 2 Klein, SDXL, Z-Image, Nano Banana via Magnific): a Photoshop panel, plus the marker nodes and template server it needs."
+version = "1.0.0"
+license = { file = "LICENSE" }
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/gprzzzz/ComfyUI_GPC_Photoshop"
+
+[tool.comfy]
+PublisherId = "gprzzzz"
+DisplayName = "GPC Photoshop"
+Icon = ""

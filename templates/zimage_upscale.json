@@ -1,0 +1,365 @@
+{
+  "1": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "z_image_turbo_bf16.safetensors",
+      "weight_dtype": "default"
+    },
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen_3_4b.safetensors",
+      "type": "lumina2"
+    },
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "flux_vae.safetensors"
+    },
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "4": {
+    "class_type": "GPC_PS_Canvas",
+    "inputs": {
+      "image": "",
+      "mask": ""
+    },
+    "_meta": {
+      "title": "PS Canvas"
+    }
+  },
+  "5": {
+    "class_type": "ImageScaleBy",
+    "inputs": {
+      "image": [
+        "4",
+        0
+      ],
+      "upscale_method": "lanczos",
+      "scale_by": [
+        "40",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Upscale (lanczos)"
+    }
+  },
+  "9": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "2",
+        0
+      ],
+      "text": [
+        "62",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Positive"
+    }
+  },
+  "10": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "2",
+        0
+      ],
+      "text": ""
+    },
+    "_meta": {
+      "title": "Negative"
+    }
+  },
+  "13": {
+    "class_type": "ModelPatchLoader",
+    "inputs": {
+      "name": "Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors"
+    },
+    "_meta": {
+      "title": "Load tile ControlNet"
+    }
+  },
+  "18": {
+    "class_type": "BasicScheduler",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "scheduler": "simple",
+      "steps": [
+        "44",
+        0
+      ],
+      "denoise": 1.0
+    },
+    "_meta": {
+      "title": "Basic Scheduler"
+    }
+  },
+  "19": {
+    "class_type": "SplitSigmasDenoise",
+    "inputs": {
+      "sigmas": [
+        "18",
+        0
+      ],
+      "denoise": [
+        "41",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Strength: skip the first steps"
+    }
+  },
+  "20": {
+    "class_type": "RandomNoise",
+    "inputs": {
+      "noise_seed": [
+        "48",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Random Noise"
+    }
+  },
+  "21": {
+    "class_type": "KSamplerSelect",
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "_meta": {
+      "title": "KSampler Select"
+    }
+  },
+  "22": {
+    "class_type": "GPC_PS_TiledRefine",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "positive": [
+        "9",
+        0
+      ],
+      "negative": [
+        "10",
+        0
+      ],
+      "vae": [
+        "3",
+        0
+      ],
+      "image": [
+        "5",
+        0
+      ],
+      "noise": [
+        "20",
+        0
+      ],
+      "sampler": [
+        "21",
+        0
+      ],
+      "sigmas": [
+        "19",
+        1
+      ],
+      "cfg": [
+        "45",
+        0
+      ],
+      "tile_size": [
+        "46",
+        0
+      ],
+      "padding": 48,
+      "blending": 24,
+      "multiple": 16,
+      "model_patch": [
+        "13",
+        0
+      ],
+      "control_strength": [
+        "42",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "PS Tiled Refine"
+    }
+  },
+  "23": {
+    "class_type": "GPC_PS_Output",
+    "inputs": {
+      "images": [
+        "22",
+        0
+      ],
+      "placement": "upscaled",
+      "mode": "upscale"
+    },
+    "_meta": {
+      "title": "PS Output"
+    }
+  },
+  "40": {
+    "class_type": "GPC_PS_Float",
+    "inputs": {
+      "label": "Scale",
+      "value": 2.0,
+      "min": 1.0,
+      "max": 4.0,
+      "step": 0.25,
+      "advanced": false,
+      "main": true,
+      "hint": "How many times bigger."
+    },
+    "_meta": {
+      "title": "Scale"
+    }
+  },
+  "41": {
+    "class_type": "GPC_PS_Float",
+    "inputs": {
+      "label": "Strength",
+      "value": 0.3,
+      "min": 0.05,
+      "max": 1.0,
+      "step": 0.01,
+      "advanced": false,
+      "main": true,
+      "hint": "How much detail it reinvents. From ~0.35 it starts inventing small objects."
+    },
+    "_meta": {
+      "title": "Strength"
+    }
+  },
+  "42": {
+    "class_type": "GPC_PS_Float",
+    "inputs": {
+      "label": "Faithfulness",
+      "value": 0.5,
+      "min": 0.0,
+      "max": 1.5,
+      "step": 0.05,
+      "advanced": false,
+      "main": true,
+      "hint": "How closely it sticks to the original (the tile ControlNet's strength)."
+    },
+    "_meta": {
+      "title": "Faithfulness"
+    }
+  },
+  "44": {
+    "class_type": "GPC_PS_Int",
+    "inputs": {
+      "label": "Steps",
+      "value": 15,
+      "min": 1,
+      "max": 50,
+      "step": 1,
+      "advanced": true,
+      "hint": "Sampling steps; Strength skips the early ones."
+    },
+    "_meta": {
+      "title": "Steps"
+    }
+  },
+  "45": {
+    "class_type": "GPC_PS_Float",
+    "inputs": {
+      "label": "CFG",
+      "value": 1.0,
+      "min": 1.0,
+      "max": 10.0,
+      "step": 0.1,
+      "advanced": true,
+      "hint": "1 suits Turbo; higher is slower."
+    },
+    "_meta": {
+      "title": "CFG"
+    }
+  },
+  "46": {
+    "class_type": "GPC_PS_Int",
+    "inputs": {
+      "label": "Tile size",
+      "value": 896,
+      "min": 512,
+      "max": 2048,
+      "step": 64,
+      "advanced": true,
+      "hint": "Larger tiles: fewer seams, more video memory."
+    },
+    "_meta": {
+      "title": "Tile size"
+    }
+  },
+  "48": {
+    "class_type": "GPC_PS_Seed",
+    "inputs": {
+      "seed": 0
+    },
+    "_meta": {
+      "title": "PS Seed"
+    }
+  },
+  "60": {
+    "class_type": "GPC_PS_Text",
+    "inputs": {
+      "label": "Prompt",
+      "text": ""
+    },
+    "_meta": {
+      "title": "PS Prompt"
+    }
+  },
+  "64": {
+    "class_type": "GPC_PS_Text",
+    "inputs": {
+      "label": "Prompt suffix",
+      "text": "4k uhd",
+      "advanced": true,
+      "hint": "Added after your prompt."
+    },
+    "_meta": {
+      "title": "PS Prompt suffix"
+    }
+  },
+  "62": {
+    "class_type": "GPC_PS_JoinText",
+    "inputs": {
+      "first": [
+        "60",
+        0
+      ],
+      "second": [
+        "64",
+        0
+      ],
+      "separator": ", "
+    },
+    "_meta": {
+      "title": "Prompt + suffix"
+    }
+  }
+}

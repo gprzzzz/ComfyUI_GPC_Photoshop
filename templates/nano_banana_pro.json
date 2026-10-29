@@ -1,0 +1,221 @@
+{
+  "4": {
+    "class_type": "GPC_PS_Canvas",
+    "inputs": {
+      "image": "",
+      "mask": ""
+    },
+    "_meta": {
+      "title": "PS Canvas"
+    }
+  },
+  "10": {
+    "class_type": "GPC_PS_Text",
+    "inputs": {
+      "label": "Prompt",
+      "text": ""
+    },
+    "_meta": {
+      "title": "Prompt"
+    }
+  },
+  "11": {
+    "class_type": "GPC_PS_ReferenceImage",
+    "inputs": {
+      "slot": 1,
+      "label": "Reference 1",
+      "image": ""
+    },
+    "_meta": {
+      "title": "Reference 1"
+    }
+  },
+  "12": {
+    "class_type": "GPC_PS_ReferenceImage",
+    "inputs": {
+      "slot": 2,
+      "label": "Reference 2",
+      "image": ""
+    },
+    "_meta": {
+      "title": "Reference 2"
+    }
+  },
+  "20": {
+    "class_type": "GPC_Magnific_NanoBanana",
+    "inputs": {
+      "image": [
+        "4",
+        0
+      ],
+      "prompt": [
+        "10",
+        0
+      ],
+      "model": "Nano Banana Pro",
+      "resolution": "auto",
+      "batch": [
+        "40",
+        0
+      ],
+      "thinking": "default",
+      "reference_1": [
+        "11",
+        0
+      ],
+      "use_reference_1": [
+        "11",
+        1
+      ],
+      "reference_2": [
+        "12",
+        0
+      ],
+      "use_reference_2": [
+        "12",
+        1
+      ]
+    },
+    "_meta": {
+      "title": "Nano Banana Pro"
+    }
+  },
+  "21": {
+    "class_type": "INPAINT_ExpandMask",
+    "inputs": {
+      "mask": [
+        "4",
+        1
+      ],
+      "grow": [
+        "41",
+        0
+      ],
+      "blur": [
+        "42",
+        0
+      ],
+      "blur_type": "gaussian"
+    },
+    "_meta": {
+      "title": "Blend mask"
+    }
+  },
+  "22": {
+    "class_type": "SolidMask",
+    "inputs": {
+      "value": [
+        "43",
+        1
+      ],
+      "width": [
+        "4",
+        2
+      ],
+      "height": [
+        "4",
+        3
+      ]
+    },
+    "_meta": {
+      "title": "Whole frame"
+    }
+  },
+  "23": {
+    "class_type": "MaskComposite",
+    "inputs": {
+      "destination": [
+        "21",
+        0
+      ],
+      "source": [
+        "22",
+        0
+      ],
+      "x": 0,
+      "y": 0,
+      "operation": "add"
+    },
+    "_meta": {
+      "title": "Blend or whole frame"
+    }
+  },
+  "30": {
+    "class_type": "GPC_PS_Output",
+    "inputs": {
+      "images": [
+        "20",
+        0
+      ],
+      "mask": [
+        "23",
+        0
+      ],
+      "placement": "over selection",
+      "mode": "magnific",
+      "mask_as": "layer mask"
+    },
+    "_meta": {
+      "title": "PS Output"
+    }
+  },
+  "40": {
+    "class_type": "GPC_PS_Int",
+    "inputs": {
+      "label": "Batch",
+      "value": 1,
+      "min": 1,
+      "max": 4,
+      "step": 1,
+      "advanced": false,
+      "hint": "Results per run. Each one costs Magnific credits."
+    },
+    "_meta": {
+      "title": "Batch"
+    }
+  },
+  "41": {
+    "class_type": "GPC_PS_Int",
+    "inputs": {
+      "label": "Blend grow",
+      "value": 8,
+      "min": 0,
+      "max": 200,
+      "step": 1,
+      "advanced": true,
+      "hint": "Grows the selection before blending the result in."
+    },
+    "_meta": {
+      "title": "Blend grow"
+    }
+  },
+  "42": {
+    "class_type": "GPC_PS_Int",
+    "inputs": {
+      "label": "Blend feather",
+      "value": 24,
+      "min": 0,
+      "max": 200,
+      "step": 1,
+      "advanced": true,
+      "hint": "Softens where the result meets the document."
+    },
+    "_meta": {
+      "title": "Blend feather"
+    }
+  },
+  "43": {
+    "class_type": "GPC_PS_Toggle",
+    "inputs": {
+      "label": "Blend into selection",
+      "value": true,
+      "advanced": false,
+      "on_number": 0.0,
+      "off_number": 1.0,
+      "hint": "The layer mask shows the result inside the selection. Off: the whole frame shows (the mask is white)."
+    },
+    "_meta": {
+      "title": "Blend into selection"
+    }
+  }
+}

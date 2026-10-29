@@ -1,0 +1,688 @@
+/* Photoshop-style panel. Colors are variables; index.js switches them to
+   match Photoshop's interface brightness (dark by default). */
+
+:root {
+  --bg: #323232;
+  --surface: #2b2b2b;
+  --input: #1f1f1f;
+  --border: #4b4b4b;
+  --border-soft: #3e3e3e;
+  --text: #e1e1e1;
+  --muted: #a8a8a8;
+  --hover: rgba(128, 128, 128, 0.18);
+  --accent: #1473e6;
+  --accent-ring: #378ef0;
+  --track: #1f1f1f;
+  --ok: #2d9d78;
+  --error: #ff7b72;
+}
+
+:root.light {
+  --bg: #f0f0f0;
+  --surface: #ffffff;
+  --input: #ffffff;
+  --border: #bdbdbd;
+  --border-soft: #d9d9d9;
+  --text: #222222;
+  --muted: #5a5a5a;
+  --hover: rgba(0, 0, 0, 0.07);
+  --track: #c9c9c9;
+  --error: #c9252d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+body {
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.heading {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.subheading {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 11px;
+}
+
+.strong {
+  font-weight: 600;
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* inputs */
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--input);
+  outline: none;
+  min-width: 0;
+}
+
+textarea {
+  width: 100%;
+  height: auto;
+  min-height: 76px;
+  padding: 8px;
+  resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent-ring);
+}
+
+select option {
+  background: var(--input);
+}
+
+textarea.secondary {
+  min-height: 40px;
+}
+
+#advPrompts textarea {
+  min-height: 72px;
+}
+
+.extra-prompts,
+#advPrompts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.main-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+
+
+.prompt-label {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.mentions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.chip {
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.chip:not(:disabled):hover,
+.ghost:hover,
+.outline:hover {
+  background: var(--hover);
+}
+
+/* buttons */
+
+.outline {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.icon {
+  width: 26px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.small-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.icon[aria-pressed="true"] {
+  background: rgba(55, 142, 240, 0.22);
+  border-color: var(--accent-ring);
+}
+
+.small-button {
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+.row {
+  display: flex;
+  gap: 6px;
+}
+
+.row > input,
+.row > select {
+  flex: 1;
+}
+
+/* references */
+
+.ref-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.ref {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.ref.empty-slot {
+  border-style: dashed;
+  background: transparent;
+}
+
+.ref-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ref select {
+  width: 100%;
+  height: 24px;
+  padding: 0 4px;
+}
+
+.ref .clear-ref {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* the run button */
+
+.run {
+  display: flex;
+  gap: 6px;
+}
+
+.primary {
+  position: relative;
+  flex: 1;
+  height: 34px;
+  border-radius: 4px;
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.primary:hover {
+  filter: brightness(1.08);
+}
+
+.primary.busy {
+  background: var(--track);
+  cursor: default;
+  filter: none;
+}
+
+.primary .fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.25s ease-out;
+}
+
+.primary .label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.primary.busy .label {
+  color: #ffffff;
+}
+
+:root.light .primary.busy .label {
+  color: #222222;
+}
+
+.kbd {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+#cancel {
+  width: 34px;
+  height: 34px;
+}
+
+.credits {
+  align-items: center;
+  margin-top: 6px;
+}
+
+.message {
+  font-size: 11px;
+  margin-top: 6px;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.message:empty {
+  display: none;
+}
+
+.message.error {
+  color: var(--error);
+}
+
+/* advanced */
+
+.advanced-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 28px;
+  margin-top: 10px;
+  padding: 0 6px;
+  border-radius: 4px;
+}
+
+.chevron {
+  transition: transform 0.15s;
+}
+
+.advanced-bar[aria-expanded="true"] .chevron {
+  transform: rotate(90deg);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.dot.ok {
+  background: var(--ok);
+}
+
+.dot.bad {
+  background: var(--error);
+}
+
+.drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 4px;
+  padding: 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.setting {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) 52px;
+  align-items: center;
+  gap: 8px;
+}
+
+.setting > input[type="number"] {
+  height: 24px;
+  padding: 0 4px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.setting.seed-row {
+  grid-template-columns: 112px minmax(0, 1fr) 24px;
+}
+
+.setting #seed {
+  text-align: left;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.check input {
+  margin: 0;
+}
+
+/* range sliders (CEP's Chromium has no accent-color, so style them by hand) */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 16px;
+  margin: 0;
+  background: transparent;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--text);
+  border: 2px solid var(--bg);
+}
+
+input[type="range"]:focus {
+  outline: none;
+}
+
+input[type="range"]:focus::-webkit-slider-thumb {
+  background: var(--accent-ring);
+}
+
+/* results */
+
+.results {
+  margin-top: 14px;
+  margin-bottom: 0;
+}
+
+.results-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.empty {
+  padding: 18px 8px;
+  text-align: center;
+  color: var(--muted);
+  border: 1px dashed var(--border-soft);
+  border-radius: 6px;
+}
+
+.job {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.job-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.thumbs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.thumb {
+  position: relative;
+}
+
+/* square frame without aspect-ratio, which CEP's Chromium may lack */
+.thumb .frame {
+  position: relative;
+  padding-top: 100%;
+}
+
+.thumb img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  background: var(--input);
+  cursor: pointer;
+}
+
+.thumb.previewing .frame img {
+  border: 2px solid var(--accent-ring);
+}
+
+.thumb .tag {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  padding: 0 5px;
+  border-radius: 3px;
+  background: var(--accent);
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+  display: none;
+}
+
+.thumb.previewing .tag {
+  display: block;
+}
+
+.thumb .acts {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.thumb:hover .acts,
+.thumb.previewing .acts,
+.thumb.kept .acts {
+  opacity: 1;
+}
+
+.thumb .acts button {
+  width: 22px;
+  height: 22px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #eeeeee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* the buttons sit on a dark overlay in every theme, so the star stays bright gold */
+.thumb.kept .keep {
+  color: #f5c33b;
+}
+
+.thumb.kept .keep svg {
+  fill: currentColor;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.35);
+  border-radius: 4px;
+}
+
+/* tabs: one per kind of job; the status dot opens the connection */
+
+.tabs {
+  display: flex;
+  align-items: center;
+  margin: -4px 0 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.tab-list {
+  display: flex;
+}
+
+.tab {
+  height: 30px;
+  padding: 0 10px;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--text);
+  border-bottom-color: var(--accent-ring);
+}
+
+.status-button {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.connection {
+  margin: 0 0 12px;
+}
+
+.template-row {
+  margin-bottom: 12px;
+}
+
+/* a setting that differs from the template's default */
+
+.setting.changed > label::after,
+.check.changed::after {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--accent-ring);
+  vertical-align: middle;
+}
+
+.setting > label[title],
+.check[title] {
+  cursor: help;
+}

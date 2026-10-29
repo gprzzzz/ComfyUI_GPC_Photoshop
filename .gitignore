@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+.DS_Store
+sweep_out/
+magnific_api_key.txt
+# Local only: notes for coding assistants, the CEP debug port, design-tool state
+CLAUDE.md
+photoshop/.debug
+.impeccable/

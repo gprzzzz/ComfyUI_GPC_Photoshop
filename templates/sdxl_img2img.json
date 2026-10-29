@@ -1,0 +1,984 @@
+{
+  "1": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": {
+      "ckpt_name": "juggernautXL_ragnarokBy.safetensors"
+    },
+    "_meta": {
+      "title": "Load Checkpoint"
+    }
+  },
+  "2": {
+    "class_type": "EasyCache",
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "reuse_threshold": 0.2,
+      "start_percent": 0.15,
+      "end_percent": 0.95,
+      "verbose": false
+    },
+    "_meta": {
+      "title": "EasyCache"
+    }
+  },
+  "3": {
+    "class_type": "DifferentialDiffusion",
+    "inputs": {
+      "model": [
+        "2",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Differential Diffusion"
+    }
+  },
+  "4": {
+    "class_type": "GPC_PS_Canvas",
+    "inputs": {
+      "image": "",
+      "mask": ""
+    },
+    "_meta": {
+      "title": "PS Canvas"
+    }
+  },
+  "5": {
+    "class_type": "GPC_PS_FitResolution",
+    "inputs": {
+      "image": [
+        "4",
+        0
+      ],
+      "mask": [
+        "7",
+        0
+      ],
+      "min_megapixels": 1.0,
+      "max_megapixels": [
+        "77",
+        1
+      ],
+      "multiple": 64,
+      "scale": [
+        "53",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "PS Fit Resolution"
+    }
+  },
+  "7": {
+    "class_type": "INPAINT_ExpandMask",
+    "inputs": {
+      "mask": [
+        "4",
+        1
+      ],
+      "grow": [
+        "40",
+        0
+      ],
+      "blur": [
+        "41",
+        0
+      ],
+      "blur_type": "linear"
+    },
+    "_meta": {
+      "title": "Expand Mask"
+    }
+  },
+  "11": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "1",
+        1
+      ],
+      "text": [
+        "62",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Positive"
+    }
+  },
+  "12": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "clip": [
+        "1",
+        1
+      ],
+      "text": [
+        "63",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Negative"
+    }
+  },
+  "14": {
+    "class_type": "HintImageEnchance",
+    "inputs": {
+      "hint_image": [
+        "4",
+        0
+      ],
+      "image_gen_width": [
+        "5",
+        2
+      ],
+      "image_gen_height": [
+        "5",
+        3
+      ],
+      "resize_mode": "Just Resize"
+    },
+    "_meta": {
+      "title": "Tile hint"
+    }
+  },
+  "15": {
+    "class_type": "ControlNetLoader",
+    "inputs": {
+      "control_net_name": "xinsir-controlnet-union-sdxl-1.0-promax.safetensors"
+    },
+    "_meta": {
+      "title": "Load ControlNet"
+    }
+  },
+  "16": {
+    "class_type": "SetUnionControlNetType",
+    "inputs": {
+      "control_net": [
+        "15",
+        0
+      ],
+      "type": "tile"
+    },
+    "_meta": {
+      "title": "Union type: tile"
+    }
+  },
+  "17": {
+    "class_type": "ControlNetApplyAdvanced",
+    "inputs": {
+      "positive": [
+        "11",
+        0
+      ],
+      "negative": [
+        "12",
+        0
+      ],
+      "control_net": [
+        "16",
+        0
+      ],
+      "image": [
+        "14",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ],
+      "strength": [
+        "50",
+        1
+      ],
+      "start_percent": 0.0,
+      "end_percent": [
+        "52",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Apply tile ControlNet"
+    }
+  },
+  "18": {
+    "class_type": "VAEEncode",
+    "inputs": {
+      "vae": [
+        "1",
+        2
+      ],
+      "pixels": [
+        "5",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "VAE Encode"
+    }
+  },
+  "19": {
+    "class_type": "GPC_PS_NoiseMask",
+    "inputs": {
+      "samples": [
+        "81",
+        0
+      ],
+      "mask": [
+        "5",
+        1
+      ]
+    },
+    "_meta": {
+      "title": "PS Noise Mask"
+    }
+  },
+  "54": {
+    "class_type": "RepeatLatentBatch",
+    "inputs": {
+      "samples": [
+        "19",
+        0
+      ],
+      "amount": [
+        "44",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Repeat Latent Batch"
+    }
+  },
+  "20": {
+    "class_type": "CFGGuider",
+    "inputs": {
+      "model": [
+        "74",
+        0
+      ],
+      "positive": [
+        "17",
+        0
+      ],
+      "negative": [
+        "17",
+        1
+      ],
+      "cfg": [
+        "45",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "CFG Guider"
+    }
+  },
+  "21": {
+    "class_type": "BasicScheduler",
+    "inputs": {
+      "model": [
+        "74",
+        0
+      ],
+      "scheduler": "karras",
+      "steps": [
+        "46",
+        0
+      ],
+      "denoise": 1.0
+    },
+    "_meta": {
+      "title": "Basic Scheduler"
+    }
+  },
+  "22": {
+    "class_type": "SplitSigmasDenoise",
+    "inputs": {
+      "sigmas": [
+        "21",
+        0
+      ],
+      "denoise": [
+        "47",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Strength: skip the first steps"
+    }
+  },
+  "23": {
+    "class_type": "RandomNoise",
+    "inputs": {
+      "noise_seed": [
+        "48",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Random Noise"
+    }
+  },
+  "24": {
+    "class_type": "KSamplerSelect",
+    "inputs": {
+      "sampler_name": "dpmpp_2m_sde_gpu"
+    },
+    "_meta": {
+      "title": "KSampler Select"
+    }
+  },
+  "25": {
+    "class_type": "SamplerCustomAdvanced",
+    "inputs": {
+      "noise": [
+        "23",
+        0
+      ],
+      "guider": [
+        "20",
+        0
+      ],
+      "sampler": [
+        "24",
+        0
+      ],
+      "sigmas": [
+        "22",
+        1
+      ],
+      "latent_image": [
+        "54",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Sampler"
+    }
+  },
+  "26": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "vae": [
+        "1",
+        2
+      ],
+      "samples": [
+        "25",
+        1
+      ]
+    },
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "27": {
+    "class_type": "INPAINT_ColorMatch",
+    "inputs": {
+      "target": [
+        "83",
+        0
+      ],
+      "reference": [
+        "5",
+        0
+      ],
+      "exclude_mask": [
+        "5",
+        1
+      ],
+      "strength": 1.0
+    },
+    "_meta": {
+      "title": "Color Match"
+    }
+  },
+  "33": {
+    "class_type": "GPC_PS_FullSelectionSwitch",
+    "inputs": {
+      "mask": [
+        "5",
+        1
+      ],
+      "partial": [
+        "27",
+        0
+      ],
+      "full": [
+        "83",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Skip Color Match for a full selection"
+    }
+  },
+  "28": {
+    "class_type": "ImageScale",
+    "inputs": {
+      "image": [
+        "33",
+        0
+      ],
+      "width": [
+        "4",
+        2
+      ],
+      "height": [
+        "4",
+        3
+      ],
+      "upscale_method": "lanczos",
+      "crop": "disabled"
+    },
+    "_meta": {
+      "title": "Back to canvas size"
+    }
+  },
+  "29": {
+    "class_type": "ThresholdMask",
+    "inputs": {
+      "mask": [
+        "7",
+        0
+      ],
+      "value": 0.0
+    },
+    "_meta": {
+      "title": "Threshold Mask"
+    }
+  },
+  "30": {
+    "class_type": "INPAINT_ShrinkMask",
+    "inputs": {
+      "mask": [
+        "29",
+        0
+      ],
+      "shrink": [
+        "42",
+        0
+      ],
+      "blur": [
+        "43",
+        0
+      ],
+      "blur_type": "gaussian"
+    },
+    "_meta": {
+      "title": "Blend mask"
+    }
+  },
+  "31": {
+    "class_type": "GPC_PS_Output",
+    "inputs": {
+      "images": [
+        "28",
+        0
+      ],
+      "mask": [
+        "30",
+        0
+      ],
+      "mode": "refine"
+    },
+    "_meta": {
+      "title": "PS Output"
+    }
+  },
+  "40": {
+    "class_type": "GPC_PS_Int",
+    "inputs": {
+      "label": "Mask grow",
+      "value": 27,
+      "min": 0,
+      "max": 200,
+      "step": 1,
+      "advanced": true,
+      "hint": "Grows the selection before generating, so the edit has room."
+    },
+    "_meta": {
+      "title": "Mask grow"
+    }
+  },
+  "41": {
+    "class_type": "GPC_PS_Int",
+    "inputs": {
+      "label": "Mask feather",
+      "value": 47,
+      "min": 0,
+      "max": 200,
+      "step": 1,
+      "advanced": true,
+      "hint": "Softens the edge of the area that gets generated."
+    },
+    "_meta": {
+      "title": "Mask feather"
+    }
+  },
+  "42": {
+    "class_type": "GPC_PS_Int",
+    "inputs": {
+      "label": "Blend shrink",
+      "value": 25,
+      "min": 0,
+      "max": 200,
+      "step": 1,
+      "advanced": true,
+      "hint": "Pulls the blend in from the selection's edge."
+    },
+    "_meta": {
+      "title": "Blend shrink"
+    }
+  },
+  "43": {
+    "class_type": "GPC_PS_Int",
+    "inputs": {
+      "label": "Blend feather",
+      "value": 50,
+      "min": 0,
+      "max": 200,
+      "step": 1,
+      "advanced": true,
+      "hint": "Softens where the result meets the document."
+    },
+    "_meta": {
+      "title": "Blend feather"
+    }
+  },
+  "44": {
+    "class_type": "GPC_PS_Int",
+    "inputs": {
+      "label": "Batch",
+      "value": 1,
+      "min": 1,
+      "max": 8,
+      "step": 1,
+      "advanced": false,
+      "hint": "Results per run."
+    },
+    "_meta": {
+      "title": "Batch"
+    }
+  },
+  "45": {
+    "class_type": "GPC_PS_Float",
+    "inputs": {
+      "label": "CFG",
+      "value": 4.9,
+      "min": 1.0,
+      "max": 15.0,
+      "step": 0.1,
+      "advanced": false,
+      "hint": "How closely it follows the prompt."
+    },
+    "_meta": {
+      "title": "CFG"
+    }
+  },
+  "46": {
+    "class_type": "GPC_PS_Int",
+    "inputs": {
+      "label": "Steps",
+      "value": 20,
+      "min": 1,
+      "max": 80,
+      "step": 1,
+      "advanced": true,
+      "hint": "Sampling steps; Strength skips the early ones."
+    },
+    "_meta": {
+      "title": "Steps"
+    }
+  },
+  "47": {
+    "class_type": "GPC_PS_Float",
+    "inputs": {
+      "label": "Strength",
+      "value": 0.5,
+      "min": 0.05,
+      "max": 1.0,
+      "step": 0.05,
+      "advanced": false,
+      "main": true,
+      "hint": "How much it repaints: 0.3 subtle, 0.5 moderate, 0.7 strong."
+    },
+    "_meta": {
+      "title": "Strength"
+    }
+  },
+  "48": {
+    "class_type": "GPC_PS_Seed",
+    "inputs": {
+      "seed": 0
+    },
+    "_meta": {
+      "title": "PS Seed"
+    }
+  },
+  "50": {
+    "class_type": "GPC_PS_Toggle",
+    "inputs": {
+      "label": "Tile ControlNet",
+      "value": true,
+      "advanced": false,
+      "main": true,
+      "on_number": [
+        "51",
+        0
+      ],
+      "off_number": 0.0,
+      "hint": "Holds the shapes and layout. Keep it on above strength ~0.5."
+    },
+    "_meta": {
+      "title": "Tile ControlNet"
+    }
+  },
+  "51": {
+    "class_type": "GPC_PS_Float",
+    "inputs": {
+      "label": "ControlNet strength",
+      "value": 1.0,
+      "min": 0.0,
+      "max": 2.0,
+      "step": 0.05,
+      "advanced": false,
+      "hint": "How firmly the ControlNet holds the original."
+    },
+    "_meta": {
+      "title": "ControlNet strength"
+    }
+  },
+  "52": {
+    "class_type": "GPC_PS_Float",
+    "inputs": {
+      "label": "ControlNet end",
+      "value": 0.95,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "advanced": true,
+      "hint": "Frees the last steps to sharpen fine detail. Much lower lets SDXL invent details."
+    },
+    "_meta": {
+      "title": "ControlNet end"
+    }
+  },
+  "53": {
+    "class_type": "GPC_PS_Float",
+    "inputs": {
+      "label": "Resolution scale",
+      "value": 1.5,
+      "min": 0.5,
+      "max": 4.0,
+      "step": 0.05,
+      "advanced": true,
+      "hint": "Works larger than the selection for more detail, then scales back."
+    },
+    "_meta": {
+      "title": "Resolution scale"
+    }
+  },
+  "60": {
+    "class_type": "GPC_PS_Text",
+    "inputs": {
+      "label": "Prompt",
+      "text": ""
+    },
+    "_meta": {
+      "title": "PS Prompt"
+    }
+  },
+  "61": {
+    "class_type": "GPC_PS_Text",
+    "inputs": {
+      "label": "Negative",
+      "text": ""
+    },
+    "_meta": {
+      "title": "PS Negative"
+    }
+  },
+  "64": {
+    "class_type": "GPC_PS_Text",
+    "inputs": {
+      "label": "Prompt suffix",
+      "text": "best quality, highres, 4k, raw, nikon, canon, f8, sharp, cinematic, detailed, national geographic",
+      "advanced": true,
+      "hint": "Added after your prompt."
+    },
+    "_meta": {
+      "title": "PS Prompt suffix"
+    }
+  },
+  "65": {
+    "class_type": "GPC_PS_Text",
+    "inputs": {
+      "label": "Default negative",
+      "text": "drawing, painting, sketch, bad quality, low resolution, blurry, broken, draft, work in progress, wip, illustration, pixelated",
+      "advanced": true,
+      "hint": "Added after your negative prompt."
+    },
+    "_meta": {
+      "title": "PS Default negative"
+    }
+  },
+  "62": {
+    "class_type": "GPC_PS_JoinText",
+    "inputs": {
+      "first": [
+        "60",
+        0
+      ],
+      "second": [
+        "64",
+        0
+      ],
+      "separator": ", "
+    },
+    "_meta": {
+      "title": "Prompt + suffix"
+    }
+  },
+  "63": {
+    "class_type": "GPC_PS_JoinText",
+    "inputs": {
+      "first": [
+        "61",
+        0
+      ],
+      "second": [
+        "65",
+        0
+      ],
+      "separator": ", "
+    },
+    "_meta": {
+      "title": "Negative + default"
+    }
+  },
+  "70": {
+    "class_type": "IPAdapterModelLoader",
+    "inputs": {
+      "ipadapter_file": "ip-adapter-plus_sdxl_vit-h.safetensors"
+    },
+    "_meta": {
+      "title": "Load IP-Adapter"
+    }
+  },
+  "71": {
+    "class_type": "CLIPVisionLoader",
+    "inputs": {
+      "clip_name": "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
+    },
+    "_meta": {
+      "title": "Load CLIP Vision"
+    }
+  },
+  "72": {
+    "class_type": "IPAdapterAdvanced",
+    "inputs": {
+      "model": [
+        "3",
+        0
+      ],
+      "ipadapter": [
+        "70",
+        0
+      ],
+      "image": [
+        "4",
+        0
+      ],
+      "weight": [
+        "76",
+        0
+      ],
+      "weight_type": "linear",
+      "combine_embeds": "concat",
+      "start_at": 0.0,
+      "end_at": 1.0,
+      "embeds_scaling": "V only",
+      "clip_vision": [
+        "71",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Global context: the whole crop for every tile"
+    }
+  },
+  "73": {
+    "class_type": "ComfySwitchNode",
+    "inputs": {
+      "switch": [
+        "77",
+        0
+      ],
+      "on_false": [
+        "3",
+        0
+      ],
+      "on_true": [
+        "72",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Global context only when tiled"
+    }
+  },
+  "74": {
+    "class_type": "GPC_PS_TiledDiffusion",
+    "inputs": {
+      "model": [
+        "73",
+        0
+      ],
+      "enabled": [
+        "77",
+        0
+      ],
+      "tile_size": 1024,
+      "overlap": 256,
+      "shift_each_step": true
+    },
+    "_meta": {
+      "title": "PS Tiled Diffusion"
+    }
+  },
+  "75": {
+    "class_type": "GPC_PS_Toggle",
+    "inputs": {
+      "label": "Auto tile",
+      "value": true,
+      "advanced": true,
+      "main": false,
+      "hint": "Tiles selections too big for one pass (over 2 MP after Resolution scale): slower, sharper."
+    },
+    "_meta": {
+      "title": "Auto tile"
+    }
+  },
+  "77": {
+    "class_type": "GPC_PS_AutoTile",
+    "inputs": {
+      "image": [
+        "4",
+        0
+      ],
+      "auto": [
+        "75",
+        0
+      ],
+      "scale": [
+        "53",
+        0
+      ],
+      "untiled_max_megapixels": 2.0,
+      "tiled_max_megapixels": 6.0
+    },
+    "_meta": {
+      "title": "Tiled when the crop is too big for one piece"
+    }
+  },
+  "76": {
+    "class_type": "GPC_PS_Float",
+    "inputs": {
+      "label": "Global context",
+      "value": 0.45,
+      "min": 0.0,
+      "max": 1.0,
+      "step": 0.05,
+      "advanced": true,
+      "hint": "How much each tile sees of the whole image, so tiles agree."
+    },
+    "_meta": {
+      "title": "Global context"
+    }
+  },
+  "80": {
+    "class_type": "VAEEncodeTiled",
+    "inputs": {
+      "pixels": [
+        "5",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ],
+      "tile_size": 1024,
+      "overlap": 64,
+      "temporal_size": 64,
+      "temporal_overlap": 8
+    },
+    "_meta": {
+      "title": "VAE Encode (tiled)"
+    }
+  },
+  "81": {
+    "class_type": "ComfySwitchNode",
+    "inputs": {
+      "switch": [
+        "77",
+        0
+      ],
+      "on_false": [
+        "18",
+        0
+      ],
+      "on_true": [
+        "80",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Tiled encode when tiled"
+    }
+  },
+  "82": {
+    "class_type": "VAEDecodeTiled",
+    "inputs": {
+      "samples": [
+        "25",
+        1
+      ],
+      "vae": [
+        "1",
+        2
+      ],
+      "tile_size": 1024,
+      "overlap": 64,
+      "temporal_size": 64,
+      "temporal_overlap": 8
+    },
+    "_meta": {
+      "title": "VAE Decode (tiled)"
+    }
+  },
+  "83": {
+    "class_type": "ComfySwitchNode",
+    "inputs": {
+      "switch": [
+        "77",
+        0
+      ],
+      "on_false": [
+        "26",
+        0
+      ],
+      "on_true": [
+        "82",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Tiled decode when tiled"
+    }
+  }
+}

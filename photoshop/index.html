@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <nav class="tabs">
+        <div id="tabs" class="tab-list" role="tablist"></div>
+        <span class="spacer"></span>
+        <button id="statusButton" class="status-button ghost" aria-expanded="false" aria-controls="connection" title="ComfyUI connection">
+          <span id="dot" class="dot"></span>
+        </button>
+      </nav>
+
+      <div id="connection" class="drawer connection hidden">
+        <div class="group">
+          <span class="subheading">ComfyUI</span>
+          <div class="row">
+            <input id="server" type="text" placeholder="http://127.0.0.1:8188" aria-label="ComfyUI address" />
+            <button id="connect" class="outline">Connect</button>
+          </div>
+          <div class="row">
+            <div id="status" class="muted small spacer">Not connected</div>
+            <button id="reload" class="ghost small-button" title="Read the template folders again">Reload templates</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="templateRow" class="row template-row hidden">
+        <select id="template" aria-label="Template"></select>
+      </div>
+
+      <section class="block">
+        <label class="heading" for="prompt">Prompt</label>
+        <div id="prompts"></div>
+        <div id="mentions" class="mentions hidden"></div>
+        <div id="extraPrompts" class="extra-prompts"></div>
+      </section>
+
+      <section id="referenceBlock" class="block hidden">
+        <span class="heading">References</span>
+        <div id="references" class="ref-grid"></div>
+      </section>
+
+      <section id="mainBlock" class="block hidden">
+        <div id="mainSettings" class="main-settings"></div>
+      </section>
+
+      <div class="run">
+        <button id="generate" class="primary">
+          <span id="bar" class="fill"></span>
+          <span id="generateLabel" class="label">Inpaint selection <span class="kbd">Ctrl+Enter</span></span>
+        </button>
+        <button id="cancel" class="icon outline hidden" aria-label="Cancel" title="Cancel">
+          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="8" rx="1" fill="currentColor"></rect></svg>
+        </button>
+      </div>
+      <div id="credits" class="row credits hidden">
+        <span class="muted small spacer">Every result costs Magnific credits.</span>
+        <button id="creditsLink" class="ghost small-button" title="Opens magnific.com/user/api-keys in your browser">Check credits ↗</button>
+      </div>
+      <div id="message" class="message"></div>
+
+      <button id="toggleAdvanced" class="advanced-bar ghost" aria-expanded="false">
+        <svg class="chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 2l3 3-3 3"></path></svg>
+        <span class="strong">Advanced</span>
+        <span class="spacer"></span>
+        <span id="templateName" class="muted small"></span>
+      </button>
+
+      <div id="advanced" class="drawer hidden">
+        <div class="row reset-row">
+          <span id="changedNote" class="muted small spacer"></span>
+          <button id="reset" class="ghost small-button" title="Back to the template's settings (your prompts stay)">Reset to defaults</button>
+        </div>
+        <div id="advPromptsGroup" class="group hidden">
+          <span class="subheading">Prompts</span>
+          <div id="advPrompts"></div>
+        </div>
+        <div id="settingsGroup" class="group">
+          <span class="subheading">Generation</span>
+          <div id="settings"></div>
+          <div class="setting seed-row">
+            <label for="seed">Seed</label>
+            <input id="seed" type="number" value="0" />
+            <button id="lockSeed" class="icon outline small-icon" aria-pressed="false" aria-label="Lock seed" title="Keep this seed for the next runs">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><rect x="2" y="5.5" width="8" height="5.5" rx="1"></rect><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5"></path></svg>
+            </button>
+          </div>
+        </div>
+        <div id="finetuneGroup" class="group hidden">
+          <span class="subheading">Fine-tuning</span>
+          <div id="finetune"></div>
+        </div>
+        <div class="group">
+          <span class="subheading">Canvas</span>
+          <div id="canvasSettings"></div>
+          <label class="check"><input id="autoPreview" type="checkbox" checked /> Preview the first result automatically</label>
+        </div>
+      </div>
+
+      <section class="block results">
+        <div class="results-head">
+          <span class="heading">Results</span>
+          <span class="muted small">· click to preview, ★ to keep</span>
+          <span class="spacer"></span>
+          <button id="clear" class="ghost small-button">Clear</button>
+        </div>
+        <div id="empty" class="empty">Results appear here</div>
+        <div id="results"></div>
+      </section>
+    </main>
+
+    <script src="index.js"></script>
+  </body>
+</html>
