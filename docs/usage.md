@@ -28,7 +28,7 @@ you keep them.
 
 ## Settings
 
-<img src="images/panel-refine.png" width="300" align="right" alt="The Refine tab with Advanced open">
+<img src="images/panel-refine-advanced.png" width="300" align="right" alt="The Refine tab with Advanced open">
 
 The main settings sit above the button (Strength, for example). Everything else is under **Advanced**:
 

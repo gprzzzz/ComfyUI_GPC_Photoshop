@@ -8,10 +8,10 @@ surroundings to ComfyUI, runs a workflow, and places the result back over the se
 blended in, at full resolution.
 
 <p>
-  <img src="docs/images/panel-edit.png" width="24%" alt="Edit tab: prompt, reference slots, strength">
-  <img src="docs/images/panel-refine-top.png" width="24%" alt="Refine tab: prompt, negative, strength, tile ControlNet">
-  <img src="docs/images/panel-upscale.png" width="24%" alt="Upscale tab">
-  <img src="docs/images/panel-magnific.png" width="24%" alt="Magnific tab with three results">
+  <img src="docs/images/panel-edit.png" width="24%" align="top" alt="Edit tab: prompt, reference slots, strength">
+  <img src="docs/images/panel-refine.png" width="24%" align="top" alt="Refine tab: prompt, negative, strength, tile ControlNet">
+  <img src="docs/images/panel-upscale.png" width="24%" align="top" alt="Upscale tab">
+  <img src="docs/images/panel-magnific.png" width="24%" align="top" alt="Magnific tab with three results">
 </p>
 
 ## What it does
@@ -29,6 +29,13 @@ blended in, at full resolution.
 - The panel builds its settings from the workflow itself. Any ComfyUI workflow becomes a panel template
   by adding a few small **marker nodes**, no code. See [Templates](docs/templates.md).
 - No Creative Cloud app or Adobe sign-in needed: it's a classic CEP panel.
+
+A quick tour: typing a prompt in each tab, opening **Advanced** on Refine to see every setting, and a
+Magnific run whose three results arrive as thumbnails.
+
+<p align="center">
+  <img src="docs/images/panel-tour.gif" width="320" alt="A tour of the panel: the four tabs, the Advanced settings, and a Magnific run with three results">
+</p>
 
 ## Examples
 
