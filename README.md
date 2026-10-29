@@ -19,8 +19,8 @@ blended in, at full resolution.
 | Tab | For | Bundled template |
 | --- | --- | --- |
 | **Edit** | Changing what's inside a selection with an instruction ("make the garage doors white"), optionally with reference images | Flux 2 Klein 4B |
-| **Refine** | Img2img: repainting a selection or the whole image while keeping its shapes | SDXL (Juggernaut XL) with a tile ControlNet, tiled automatically for big areas |
-| **Upscale** | Making the whole image, or a part of it, 2–4× larger with new detail | Z-Image Turbo, tiled, with its tile ControlNet |
+| **Refine** | Img2img: repainting a selection or the whole image while keeping its shapes | SDXL (Juggernaut XL) with a tile ControlNet to help avoid hallucination, tiled automatically for bigger selections |
+| **Upscale** | Making the whole image, or a part of it, 2–4× larger with new detail | Z-Image Turbo, running a custom UltimateSDUpscale style tiled upscale |
 | **Magnific** | Editing with Nano Banana 2.1, Pro or Pro Flash (paid, online, through your Magnific API key) | No local model needed |
 
 - Results show up as thumbnails; the first one previews in the document right away. Keep the ones you
@@ -43,11 +43,11 @@ Magnific run whose three results arrive as thumbnails.
 
 ![Before and after a Flux 2 Klein edit](docs/images/example-edit.jpg)
 
-**Refine** with SDXL (strength 0.75, ControlNet strength 0.6): soft, smeared trees get real leaves (detail)
+**Refine** with SDXL (strength 0.75, ControlNet strength 0.6): soft, smeared trees get real leaves (detail). Best for smallish images/selections. Things start to get weird past 2048x2048.
 
 ![Soft trees before and after an SDXL refine](docs/images/example-refine.jpg)
 
-**Upscale** 2× with Z-Image Turbo: the same small area of the photo, before and after
+**Upscale** 2× with Z-Image Turbo: the same small area of the photo, before and after. This looks a lot like what refine does, but is capable of pushing the image to much larger resolutions than refine.
 
 ![A detail of the original next to the Z-Image 2× upscale: stone, window frame and shrubs come out sharp](docs/images/example-upscale.jpg)
 
