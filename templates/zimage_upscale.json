@@ -168,7 +168,7 @@
         0
       ],
       "image": [
-        "5",
+        "73",
         0
       ],
       "noise": [
@@ -360,6 +360,65 @@
     },
     "_meta": {
       "title": "Prompt + suffix"
+    }
+  },
+  "70": {
+    "class_type": "UpscaleModelLoader",
+    "inputs": {
+      "model_name": "4x_NMKD-Superscale-SP_178000_G.pth"
+    },
+    "_meta": {
+      "title": "Upscale model"
+    }
+  },
+  "71": {
+    "class_type": "ImageUpscaleWithModel",
+    "inputs": {
+      "upscale_model": [
+        "70",
+        0
+      ],
+      "image": [
+        "4",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Upscale with model"
+    }
+  },
+  "72": {
+    "class_type": "GetImageSize",
+    "inputs": {
+      "image": [
+        "5",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Target size"
+    }
+  },
+  "73": {
+    "class_type": "ImageScale",
+    "inputs": {
+      "image": [
+        "71",
+        0
+      ],
+      "upscale_method": "lanczos",
+      "width": [
+        "72",
+        0
+      ],
+      "height": [
+        "72",
+        1
+      ],
+      "crop": "disabled"
+    },
+    "_meta": {
+      "title": "Scale to target"
     }
   }
 }

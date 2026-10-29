@@ -36,13 +36,13 @@ blended in, at full resolution.
 
 ![Before and after a Flux 2 Klein edit](docs/images/example-edit.jpg)
 
-**Refine** with SDXL at strength 0.6: soft, smeared trees get real leaves (detail)
+**Refine** with SDXL (strength 0.75, ControlNet strength 0.6): soft, smeared trees get real leaves (detail)
 
 ![Soft trees before and after an SDXL refine](docs/images/example-refine.jpg)
 
-**Upscale** 4× with Z-Image Turbo, a close zoom into a 384 px image
+**Upscale** 4× with Z-Image Turbo: a 256 px wide detail, enlarged plainly and upscaled
 
-![The small original enlarged next to the Z-Image upscale: brick, tree trunk and garage windows come out](docs/images/example-upscale.jpg)
+![The small original enlarged next to the Z-Image upscale: stone, garage doors and shrubs come out sharp](docs/images/example-upscale.jpg)
 
 **Magnific** with Nano Banana 2.1: "Turn this into a night photograph: deep blue sky after dusk, warm
 light glowing from every window, the porch light on, soft landscape lights along the walk…"

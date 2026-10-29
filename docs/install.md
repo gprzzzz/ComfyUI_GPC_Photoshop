@@ -73,6 +73,7 @@ Klein 4B is Apache 2.0. The 9B model is non-commercial.
 | `qwen_3_4b.safetensors` | `text_encoders` |
 | `flux_vae.safetensors` | `vae` |
 | `Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors` | `model_patches` |
+| `4x_NMKD-Superscale-SP_178000_G.pth` ([OpenModelDB](https://openmodeldb.info/models/4x-NMKD-Superscale), WTFPL) | `upscale_models` |
 
 **Magnific: Nano Banana** (`nano_banana_2_1`, `nano_banana_pro`, `nano_banana_pro_flash`): no models,
 but a Magnific API key (below).

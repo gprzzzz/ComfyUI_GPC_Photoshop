@@ -84,8 +84,10 @@ mode, and EasyCache.
 
 ### Z-Image upscale (`zimage_upscale`)
 
-Follows Krita AI Diffusion's Z-Image Turbo upscale: a lanczos upscale, then a refine in tiles (PS Tiled
-Refine) with the Z-Image Fun tile ControlNet. CFG 1 (Turbo is distilled; higher looked the same and was
+Follows Krita AI Diffusion's Z-Image Turbo upscale: a 4× upscale model (NMKD Superscale), scaled to the
+chosen size, then a refine in tiles (PS Tiled Refine) with the Z-Image Fun tile ControlNet. Starting from
+a plain lanczos enlargement instead left the result blurry: Z-Image at strength 0.3 mostly keeps what it's
+given. CFG 1 (Turbo is distilled; higher looked the same and was
 slower), 15 steps, 896 px tiles, "4k uhd" as the prompt suffix.
 
 ### Nano Banana (`nano_banana_2_1`, `nano_banana_pro`, `nano_banana_pro_flash`)

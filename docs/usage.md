@@ -71,7 +71,7 @@ For changes described in words: recolor, replace, add or remove things inside th
 Img2img: SDXL repaints the selection (or the whole image) while a tile ControlNet keeps its shapes. Good
 for adding realism, texture and light to a rough render or a weak area.
 
-![Soft trees before and after an SDXL refine at strength 0.6: the leaves come out](images/example-refine.jpg)
+![Soft trees before and after an SDXL refine at strength 0.75 and ControlNet strength 0.6: the leaves come out](images/example-refine.jpg)
 
 - **Strength** is how much it repaints: 0.3 polishes, 0.6 reworks, 1 starts over.
 - **Tile ControlNet** keeps shapes in place. Leave it on above strength ~0.5, otherwise SDXL redraws the
@@ -81,6 +81,8 @@ for adding realism, texture and light to a rough render or a weak area.
   seconds; a 2048 px area about a minute.
 - **ControlNet end** (0.95) leaves the last steps free so fine texture comes out crisp. Lower lets SDXL
   invent more detail of its own.
+- For soft vegetation, try Strength 0.75 with **ControlNet strength** (Advanced) at 0.6: the shapes stay,
+  and SDXL is free to draw new leaves.
 
 ## Upscale (Z-Image Turbo)
 
@@ -92,7 +94,7 @@ for adding realism, texture and light to a rough render or a weak area.
 - Tiny symbols and lettering (a flag's emblem, a sign) can come out changed, especially from a small
   source image. Lower **Strength** to 0.2 for those, or keep the original there with a layer mask.
 
-![A close zoom into a 384 px image, enlarged plainly and with a 4× Z-Image upscale: brick, tree trunk and garage windows come out](images/example-upscale.jpg)
+![A 256 px wide detail enlarged plainly and with a 4× Z-Image upscale: stone, garage doors and shrubs come out sharp](images/example-upscale.jpg)
 
 ## Magnific (Nano Banana)
 

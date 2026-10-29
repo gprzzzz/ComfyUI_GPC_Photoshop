@@ -65,6 +65,7 @@ MODEL_INPUTS = {
     ("IPAdapterModelLoader", "ipadapter_file"): "ipadapter",
     ("ModelPatchLoader", "name"): "model_patches",
     ("LoraLoader", "lora_name"): "loras",
+    ("UpscaleModelLoader", "model_name"): "upscale_models",
 }
 
 
