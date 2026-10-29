@@ -1,18 +1,17 @@
 # GPC Photoshop for ComfyUI
 
 Edit, refine and upscale inside Photoshop with your own [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
-workflows, or with Google's Nano Banana through a Magnific account.
+workflows. Edit locally with Flux 2 Klein, or with Google's Nano Banana through a Magnific API key.
 
 Select an area, write what you want, click the button. The panel sends the selection and its
 surroundings to ComfyUI, runs a workflow, and places the result back over the selection, lined up,
 blended in, at full resolution.
 
-![Before and after: Nano Banana 2.1 turned the garage doors white and added planters like a reference image](docs/images/example-magnific.jpg)
-
 <p>
   <img src="docs/images/panel-edit.png" width="24%" alt="Edit tab: prompt, reference slots, strength">
-  <img src="docs/images/panel-magnific.png" width="24%" alt="Magnific tab with three results">
+  <img src="docs/images/panel-refine-top.png" width="24%" alt="Refine tab: prompt, negative, strength, tile ControlNet">
   <img src="docs/images/panel-upscale.png" width="24%" alt="Upscale tab">
+  <img src="docs/images/panel-magnific.png" width="24%" alt="Magnific tab with three results">
 </p>
 
 ## What it does
@@ -37,13 +36,18 @@ blended in, at full resolution.
 
 ![Before and after a Flux 2 Klein edit](docs/images/example-edit.jpg)
 
-**Refine** with SDXL at strength 0.5 (detail)
+**Refine** with SDXL at strength 0.6: soft, smeared trees get real leaves (detail)
 
-![A detail before and after an SDXL refine](docs/images/example-refine.jpg)
+![Soft trees before and after an SDXL refine](docs/images/example-refine.jpg)
 
-**Upscale** 2× with Z-Image Turbo (detail)
+**Upscale** 4× with Z-Image Turbo, a close zoom into a 384 px image
 
-![A plain enlargement next to the Z-Image upscale](docs/images/example-upscale.jpg)
+![The small original enlarged next to the Z-Image upscale: brick, tree trunk and garage windows come out](docs/images/example-upscale.jpg)
+
+**Magnific** with Nano Banana 2.1: "Turn this into a night photograph: deep blue sky after dusk, warm
+light glowing from every window, the porch light on, soft landscape lights along the walk…"
+
+![The house by day, and the same house at night from Nano Banana 2.1](docs/images/example-magnific.jpg)
 
 ## Quick start
 

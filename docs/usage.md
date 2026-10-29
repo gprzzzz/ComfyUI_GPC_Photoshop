@@ -71,7 +71,7 @@ For changes described in words: recolor, replace, add or remove things inside th
 Img2img: SDXL repaints the selection (or the whole image) while a tile ControlNet keeps its shapes. Good
 for adding realism, texture and light to a rough render or a weak area.
 
-![A detail before and after an SDXL refine at strength 0.5: sharper brick and siding](images/example-refine.jpg)
+![Soft trees before and after an SDXL refine at strength 0.6: the leaves come out](images/example-refine.jpg)
 
 - **Strength** is how much it repaints: 0.3 polishes, 0.6 reworks, 1 starts over.
 - **Tile ControlNet** keeps shapes in place. Leave it on above strength ~0.5, otherwise SDXL redraws the
@@ -92,7 +92,7 @@ for adding realism, texture and light to a rough render or a weak area.
 - Tiny symbols and lettering (a flag's emblem, a sign) can come out changed, especially from a small
   source image. Lower **Strength** to 0.2 for those, or keep the original there with a layer mask.
 
-![A plain enlargement next to the Z-Image upscale: crisper siding, trim and windows](images/example-upscale.jpg)
+![A close zoom into a 384 px image, enlarged plainly and with a 4× Z-Image upscale: brick, tree trunk and garage windows come out](images/example-upscale.jpg)
 
 ## Magnific (Nano Banana)
 
@@ -101,7 +101,7 @@ for adding realism, texture and light to a rough render or a weak area.
 Edits with Google's Nano Banana models through your Magnific API key (see the
 [install guide](install.md#4-magnific-optional)). The template picker chooses the model:
 
-![Before and after: Nano Banana 2.1 with a reference image of planters](images/example-magnific.jpg)
+![The house by day, and at night from Nano Banana 2.1 ("turn this into a night photograph…")](images/example-magnific.jpg)
 
 | Template | Model | Credits per result (Oct 2026) |
 | --- | --- | --- |
