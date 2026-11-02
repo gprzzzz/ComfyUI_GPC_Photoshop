@@ -148,6 +148,8 @@ One-click effects on the **whole image**, whatever is selected. The result goes 
   away; it doesn't add objects or follow a prompt. Needs the DLSS 5 runtime (see
   [Install](install.md#5-dlss-5-optional)); images larger than 7680 × 4320 are refused.
 
+![The house before, and after Enhance with DLSS5](images/example-post.jpg)
+
 ## Tips
 
 - **Small, focused selections** give the model more pixels to work with. Edit and Magnific upscale

@@ -1,17 +1,19 @@
 # GPC Photoshop for ComfyUI
 
 Edit, refine and upscale inside Photoshop with your own [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
-workflows. Edit locally with Flux 2 Klein, or with Google's Nano Banana through a Magnific API key.
+workflows. Edit locally with Flux 2 Klein, or with Google's Nano Banana through a Magnific API key. Finish
+the whole image in one click with NVIDIA DLSS 5.
 
 Select an area, write what you want, click the button. The panel sends the selection and its
 surroundings to ComfyUI, runs a workflow, and places the result back over the selection, lined up,
 blended in, at full resolution.
 
 <p>
-  <img src="docs/images/panel-edit.png" width="24%" align="top" alt="Edit tab: prompt, reference slots, strength">
-  <img src="docs/images/panel-refine.png" width="24%" align="top" alt="Refine tab: prompt, negative, strength, tile ControlNet">
-  <img src="docs/images/panel-upscale.png" width="24%" align="top" alt="Upscale tab">
-  <img src="docs/images/panel-magnific.png" width="24%" align="top" alt="Magnific tab with three results">
+  <img src="docs/images/panel-edit.png" width="19%" align="top" alt="Edit tab: prompt, reference slots, strength">
+  <img src="docs/images/panel-refine.png" width="19%" align="top" alt="Refine tab: prompt, negative, strength, tile ControlNet">
+  <img src="docs/images/panel-upscale.png" width="19%" align="top" alt="Upscale tab">
+  <img src="docs/images/panel-magnific.png" width="19%" align="top" alt="Magnific tab with three results">
+  <img src="docs/images/panel-post.png" width="19%" align="top" alt="Post tab: the Enhance with DLSS5 button and its result">
 </p>
 
 ## What it does
@@ -56,6 +58,11 @@ Magnific run whose three results arrive as thumbnails.
 light glowing from every window, the porch light on, soft landscape lights along the walk…"
 
 ![The house by day, and the same house at night from Nano Banana 2.1](docs/images/example-magnific.jpg)
+
+**Post** with Enhance with DLSS5: one click on the whole image, default settings. Siding, stone, foliage and
+lawn come out crisper, with the same layout and no invented objects. It lands over the image as a smart object.
+
+![The house before, and after Enhance with DLSS5](docs/images/example-post.jpg)
 
 ## Quick start
 
