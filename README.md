@@ -22,6 +22,7 @@ blended in, at full resolution.
 | **Refine** | Img2img: repainting a selection or the whole image while keeping its shapes | SDXL (Juggernaut XL) with a tile ControlNet to help avoid hallucination, tiled automatically for bigger selections |
 | **Upscale** | Making the whole image, or a part of it, 2–4× larger with new detail | Z-Image Turbo, running a custom UltimateSDUpscale style tiled upscale |
 | **Magnific** | Editing with Nano Banana 2.1, Pro or Pro Flash (paid, online, through your Magnific API key) | No local model needed |
+| **Post** | One-click effects on the whole image, added as a smart object: **Enhance with DLSS5** | NVIDIA DLSS 5 (Windows, RTX 30 or newer, [runtime setup](docs/install.md#5-dlss-5-optional)) |
 
 - Results show up as thumbnails; the first one previews in the document right away. Keep the ones you
   like as layers, discard the rest.
@@ -84,6 +85,7 @@ ComfyUI address, the Magnific key, updating and troubleshooting.
 ## License
 
 [GPL-3.0](LICENSE). The bundled workflows follow the graphs of
-[Krita AI Diffusion](https://github.com/Acly/krita-ai-diffusion), rebuilt for Photoshop. Not affiliated
-with Adobe, Magnific, Google or Black Forest Labs; Nano Banana, Photoshop and the model names belong to
+[Krita AI Diffusion](https://github.com/Acly/krita-ai-diffusion), rebuilt for Photoshop. The DLSS5 node comes from Blueforcer's
+[ComfyUI-DLSS5-Enhancer](https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer) (MIT). Not affiliated
+with Adobe, Magnific, Google, NVIDIA or Black Forest Labs; Nano Banana, Photoshop and the model names belong to
 their owners.

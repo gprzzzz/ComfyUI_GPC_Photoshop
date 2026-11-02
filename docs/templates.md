@@ -42,6 +42,7 @@ The panel lists controls in node-id order. PS Output's `mode` decides which tab 
 | **PS Reference Latent** | A reference image slot for edit-style models (Flux 2 / Klein, Kontext). An empty slot passes the conditioning through |
 | **PS Reference Image** | A reference image slot as a plain IMAGE, plus `provided` (false when empty), for models that take images differently |
 | **Magnific Nano Banana** | Sends `image` and up to three references to Nano Banana on Magnific and returns the results, aligned with the image. `model`, `resolution` (auto picks 1K or 2K), `batch`, `thinking` (2.1 only). Needs the Magnific API key |
+| **DLSS5 Enhance** | NVIDIA DLSS 5 neural rendering over each image, with optional 1.5–3× upscaling; what the Post tab's **Enhance with DLSS5** runs, with these defaults. Needs the DLSS 5 runtime (see Install). From Blueforcer's [ComfyUI-DLSS5-Enhancer](https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer) (MIT, `nodes/dlss5/LICENSE`), image path only |
 | **PS Join Text** | Joins two texts with a separator, skipping an empty one, e.g. your prompt and a quality suffix |
 | **PS Full Selection Switch** | Passes `partial` through, or `full` when the whole crop is selected; only the branch used runs. The bundled templates skip Color Match with it, which returns black for a full selection |
 | **PS Fit Resolution** | Scales the canvas and mask into the model's megapixel range, snapped to a multiple |

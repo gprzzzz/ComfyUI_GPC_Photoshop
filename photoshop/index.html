@@ -28,6 +28,8 @@
         </div>
       </div>
 
+      <!-- The template tabs; the Post tab shows #postView instead. -->
+      <div id="templateView" class="view">
       <div id="templateRow" class="row template-row hidden">
         <select id="template" aria-label="Template"></select>
       </div>
@@ -61,8 +63,15 @@
         <span class="muted small spacer">Every result costs Magnific credits.</span>
         <button id="creditsLink" class="ghost small-button" title="Opens magnific.com/user/api-keys in your browser">Check credits ↗</button>
       </div>
+      </div>
+
+      <section id="postView" class="block post hidden">
+        <span class="muted small">Effects on the whole image, added as a smart object.</span>
+        <div id="effects" class="effects"></div>
+      </section>
       <div id="message" class="message"></div>
 
+      <div id="advancedView" class="view">
       <button id="toggleAdvanced" class="advanced-bar ghost" aria-expanded="false">
         <svg class="chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 2l3 3-3 3"></path></svg>
         <span class="strong">Advanced</span>
@@ -99,6 +108,7 @@
           <div id="canvasSettings"></div>
           <label class="check"><input id="autoPreview" type="checkbox" checked /> Preview the first result automatically</label>
         </div>
+      </div>
       </div>
 
       <section class="block results">

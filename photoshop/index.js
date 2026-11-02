@@ -21,6 +21,7 @@ const PLACEHOLDERS = {
 const CONTEXT = { magnific: 10 };
 const ICONS = {
   x: '<svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6"></path></svg>',
+  stop: '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="2" width="8" height="8" rx="1" fill="currentColor"></rect></svg>',
   star: '<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" aria-hidden="true"><path d="M7 1.5l1.7 3.5 3.8.5-2.8 2.6.7 3.8L7 10.1 3.6 11.9l.7-3.8L1.5 5.5l3.8-.5z"></path></svg>',
 };
 
@@ -28,6 +29,12 @@ const ICONS = {
 const settings = load("settings", { server: "http://127.0.0.1:8188", template: "", tab: "edit", templates: {}, padding: 50, contexts: {}, autoPreview: true });
 // Magnific's API doesn't report the balance; this page does.
 const MAGNIFIC_CREDITS = "https://www.magnific.com/user/api-keys";
+// The Post tab: one-click effects on the whole image, each one node of this pack
+// between PS Canvas and PS Output, with the node's own defaults.
+const POST = { id: "post", label: "Post" };
+const EFFECTS = [
+  { node: "GPC_DLSS5_Enhance", label: "Enhance with DLSS5", busy: "Enhancing with DLSS5", about: "NVIDIA DLSS 5 neural rendering: crisper materials, foliage, skin and fabric." },
+];
 // catalog: { [mode]: [{ name, template, info }] }, from every template on the server.
 const state = { client: null, catalog: {}, template: null, info: null, references: {}, values: {}, controlNodes: {}, hasSelection: true, jobs: [], preview: null, busy: false };
 
@@ -152,18 +159,18 @@ async function loadCatalog(names) {
   }
   state.catalog = catalog;
   renderTabs();
+  selectTab(catalog[settings.tab] || settings.tab === POST.id ? settings.tab : tabs()[0].id);
   if (!names.length) return message("No templates on the server. Add one to ComfyUI/user/gpc_photoshop/.", true);
-  const open = catalog[settings.tab] ? settings.tab : MODES.map((m) => m.id).find((id) => catalog[id]);
-  if (open) selectTab(open);
   if (broken.length) message("Skipped templates that can't be used:\n" + broken.join("\n"), true);
 }
 
-// One tab per kind of job that has templates.
+// One tab per kind of job that has templates, then Post.
+const tabs = () => MODES.filter((m) => state.catalog[m.id]).concat([POST]);
+
 function renderTabs() {
   const list = $("tabs");
   list.innerHTML = "";
-  for (const mode of MODES) {
-    if (!state.catalog[mode.id]) continue;
+  for (const mode of tabs()) {
     const tab = el("button", { class: "tab", role: "tab", text: mode.label, "aria-selected": String(mode.id === settings.tab) });
     tab.addEventListener("click", () => selectTab(mode.id));
     list.appendChild(tab);
@@ -173,9 +180,14 @@ function renderTabs() {
 function selectTab(mode) {
   settings.tab = mode;
   save();
-  renderContext();
-  const label = MODES.find((m) => m.id === mode).label;
+  const label = tabs().find((m) => m.id === mode).label;
   for (const tab of $("tabs").children) tab.setAttribute("aria-selected", String(tab.textContent === label));
+  const post = mode === POST.id;
+  show($("templateView"), !post);
+  show($("advancedView"), !post);
+  show($("postView"), post);
+  if (post) return renderEffects();
+  renderContext();
   const entries = state.catalog[mode] || [];
   const select = $("template");
   select.innerHTML = "";
@@ -407,6 +419,7 @@ async function renderReferences() {
 // "Edit selection", "Refine image", ...: what the button will do, given the selection.
 function idleLabel() {
   const mode = state.info ? state.info.mode : settings.tab;
+  if (!MODES.some((m) => m.id === mode)) return "Generate";
   const verb = mode === "magnific" ? "Edit" : MODES.find((m) => m.id === mode).label;
   return mode === "edit" ? "Edit selection" : `${verb} ${state.hasSelection ? "selection" : "image"}`;
 }
@@ -427,6 +440,7 @@ function setBusy(busy, fraction = 0, text = "") {
   state.busy = busy;
   $("generate").classList.toggle("busy", busy);
   show($("cancel"), busy);
+  renderEffects(busy, fraction, text);
   $("bar").style.width = busy ? Math.round(fraction * 100) + "%" : "0";
   if (busy) $("generateLabel").textContent = text;
   else $("generateLabel").innerHTML = `${idleLabel()} <span class="kbd">Ctrl+Enter</span>`;
@@ -512,6 +526,65 @@ async function generate() {
   }
 }
 
+// The Post tab's buttons. While one runs, it shows the progress and a cancel button.
+function renderEffects(busy = state.busy, fraction = 0, text = "") {
+  const box = $("effects");
+  if (!box.children.length) {
+    for (const effect of EFFECTS) {
+      const button = el("button", { class: "primary" }, [el("span", { class: "fill" }), el("span", { class: "label", text: effect.label })]);
+      button.addEventListener("click", () => runEffect(effect));
+      const cancel = el("button", { class: "icon outline hidden", "aria-label": "Cancel", title: "Cancel", html: ICONS.stop });
+      cancel.addEventListener("click", () => state.client && state.client.interrupt().catch(() => {}));
+      box.appendChild(el("div", { class: "effect" }, [el("div", { class: "run" }, [button, cancel]), el("span", { class: "muted small", text: effect.about })]));
+      effect.row = { button, cancel };
+    }
+  }
+  for (const effect of EFFECTS) {
+    const { button, cancel } = effect.row;
+    const running = busy && state.effect === effect;
+    button.disabled = busy && !running;
+    button.classList.toggle("busy", running);
+    button.querySelector(".fill").style.width = running ? Math.round(fraction * 100) + "%" : "0";
+    button.querySelector(".label").textContent = running ? text : effect.label;
+    show(cancel, running);
+  }
+}
+
+// Runs an effect over the whole image and keeps the result as a smart object over it.
+async function runEffect(effect) {
+  if (state.busy) return;
+  if (!state.client) return message("Not connected to ComfyUI: click the dot at the top right.", true);
+  state.effect = effect;
+  setBusy(true, 0, "Exporting…");
+  message("");
+  try {
+    const doc = await ps.activeDocument();
+    await clearPreview();
+    const crop = { left: 0, top: 0, right: doc.width, bottom: doc.height };
+    const canvas = await ps.exportCanvas(crop);
+    const prompt = {
+      1: { class_type: "GPC_PS_Canvas", inputs: { image: toBase64(canvas.image), mask: "" } },
+      2: { class_type: effect.node, inputs: { images: ["1", 0] } },
+      3: { class_type: "GPC_PS_Output", inputs: { images: ["2", 0] } },
+    };
+    setBusy(true, 0, effect.busy + "…");
+    const id = await state.client.queue(prompt);
+    const job = addJob(doc, crop, 0, "smart object", { text: effect.label, tab: POST.label });
+    const entry = await state.client.wait(id, (f) => setBusy(true, f, effect.busy + "…"));
+    const images = await state.client.outputImages(entry, ["3"]);
+    setBusy(false);
+    if (!images.length) return message(effect.label + " finished without an image.", true);
+    showResults(job, images);
+    await keep(job, 0);
+  } catch (e) {
+    setBusy(false);
+    message(e.message, true);
+  } finally {
+    state.effect = null;
+    renderEffects();
+  }
+}
+
 // --- results ---
 
 function updateEmpty() {
@@ -520,15 +593,16 @@ function updateEmpty() {
 
 // mode: "inpaint" (preview over the crop), "smart object" (an upscaled part, kept as a
 // smart object) or "new document" (an upscaled whole image, opened as its own document).
-function addJob(doc, crop, seed, mode) {
-  const prompt = state.info.controls.find((c) => c.kind === "text");
-  const text = prompt ? String(state.values[prompt.id] ?? prompt.value) : settings.template;
+// `about` ({ text, tab }) describes a job that isn't the open template's (a Post effect).
+function addJob(doc, crop, seed, mode, about = null) {
+  const prompt = about ? null : state.info.controls.find((c) => c.kind === "text");
+  const text = about ? about.text : prompt ? String(state.values[prompt.id] ?? prompt.value) : settings.template;
   const n = state.jobs.length ? state.jobs[0].n + 1 : 1;
   // Templates without a seed (Nano Banana has none) don't show one.
-  const seeded = state.info.seeds.length > 0;
+  const seeded = !about && state.info.seeds.length > 0;
   const job = { n, mode, docId: doc.id, docTitle: doc.title, resolution: doc.resolution, crop, name: `GPC ${n}: ${text.slice(0, 40)}${seeded ? ` (${seed})` : ""}`, images: [], masks: [], thumbs: [] };
-  const tab = MODES.find((m) => m.id === state.info.mode).label;
-  job.meta = el("span", { class: "muted small", text: `${tab} · ${seeded ? `Seed ${seed} · ` : ""}${doc.title} · generating…`, title: settings.template });
+  const tab = about ? about.tab : MODES.find((m) => m.id === state.info.mode).label;
+  job.meta = el("span", { class: "muted small", text: `${tab} · ${seeded ? `Seed ${seed} · ` : ""}${doc.title} · generating…`, title: about ? about.text : settings.template });
   job.strip = el("div", { class: "thumbs" });
   const title = el("div", { class: "job-title", text: text || "Untitled", title: text });
   job.box = el("div", { class: "job" }, [el("div", {}, [title, job.meta]), job.strip]);

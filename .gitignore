@@ -9,3 +9,5 @@ magnific_api_key.txt
 CLAUDE.md
 photoshop/.debug
 .impeccable/
+# DLSS 5 runtime binaries (tools/install_dlss5_runtime.py): never committed
+dlss5_runtime/

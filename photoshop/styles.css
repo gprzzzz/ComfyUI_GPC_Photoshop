@@ -207,6 +207,23 @@ textarea.secondary {
   border-radius: 4px;
 }
 
+/* Groups of panel children, shown or hidden together, that lay out as if they weren't there. */
+.view {
+  display: contents;
+}
+
+.effects {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.effect {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .icon {
   width: 26px;
   padding: 0;

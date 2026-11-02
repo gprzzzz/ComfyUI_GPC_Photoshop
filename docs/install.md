@@ -125,6 +125,30 @@ ComfyUI makes the requests, so the ComfyUI computer needs internet access; Photo
 **Every result costs Magnific credits**, even if your plan has unlimited Nano Banana in Magnific's own
 app: API calls always run on credits. Keep the key file out of anything you share.
 
+## 5. DLSS 5 (optional)
+
+**Enhance with DLSS5** (Post tab) runs NVIDIA's DLSS 5 neural rendering over the whole image. It needs Windows, an
+RTX 30, 40 or 50 card, and the DLSS 5 runtime: NVIDIA, ReShade and RenoDX files that this repo doesn't
+include. Get them with ComfyUI's Python, from the ComfyUI folder:
+
+```bash
+python custom_nodes/ComfyUI_GPC_Photoshop/tools/install_dlss5_runtime.py
+```
+
+It downloads the [DLSS 5 Visual Enhancer](https://github.com/Merserk/dlss5-visual-enhancer) release
+(about 467 MB) and keeps only its runtime, in `ComfyUI_GPC_Photoshop/dlss5_runtime`. If you already
+have that application, or [ComfyUI-DLSS5-Enhancer](https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer)
+in another ComfyUI, point at its runtime folder (the one holding `nvngx.dll`) instead:
+
+```bash
+python custom_nodes/ComfyUI_GPC_Photoshop/tools/install_dlss5_runtime.py --runtime-dir "D:/DLSS 5 Visual Enhancer/bin/runtime"
+```
+
+That writes the path to `ComfyUI/user/gpc_photoshop/dlss5_runtime.txt`. The environment variable
+`DLSS5_RUNTIME_DIR` works too, and a ComfyUI-DLSS5-Enhancer next to this pack is found on its own.
+Restart ComfyUI. The runtime's worker is an executable named `nvngx.dll`, which antivirus software
+sometimes blocks; if the button reports that the worker couldn't start, exclude that folder.
+
 ## Updating
 
 ```bash

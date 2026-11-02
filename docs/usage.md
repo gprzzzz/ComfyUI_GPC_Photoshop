@@ -138,6 +138,16 @@ Good to know:
 
 <br clear="right">
 
+## Post
+
+One-click effects on the **whole image**, whatever is selected. The result goes over the image as a
+**smart object** right away (no preview step); lower its opacity or mask it to use only part of it.
+
+- **Enhance with DLSS5**: NVIDIA's DLSS 5 neural rendering at the image's own size. It reconstructs
+  material response, so foliage, skin, fabric and surfaces gain structure and generator noise goes
+  away; it doesn't add objects or follow a prompt. Needs the DLSS 5 runtime (see
+  [Install](install.md#5-dlss-5-optional)); images larger than 7680 × 4320 are refused.
+
 ## Tips
 
 - **Small, focused selections** give the model more pixels to work with. Edit and Magnific upscale
