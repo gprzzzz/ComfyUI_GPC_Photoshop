@@ -66,7 +66,9 @@ lawn come out crisper, with the same layout and no invented objects. It lands ov
 
 ## Quick start
 
-You need Photoshop 2022 (v23) or newer, on Windows or macOS, and a working ComfyUI.
+No ComfyUI yet, on Windows? Try the [setup program](docs/install.md#setup-program-windows-beta) (beta): it installs ComfyUI, the panel and whichever workflows you tick.
+
+Otherwise, you need Photoshop 2022 (v23) or newer, on Windows or macOS, and a working ComfyUI.
 
 1. Install the node pack into ComfyUI and restart it:
    ```bash

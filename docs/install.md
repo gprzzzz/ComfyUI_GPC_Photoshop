@@ -1,5 +1,37 @@
 # Install
 
+## Setup program (Windows, beta)
+
+No ComfyUI yet? Download `GPC_Photoshop_Setup.bat` from the
+[latest pre-release](https://github.com/gprzzzz/ComfyUI_GPC_Photoshop/releases) and double-click it.
+It's new and hasn't been tried on many computers yet. Windows may warn about a downloaded script: choose
+**More info › Run anyway**. It doesn't need administrator rights or anything else installed.
+
+Tick what you want:
+
+| Choice | What you get | Download |
+| --- | --- | --- |
+| **All workflows** | Edit, Refine and Upscale on your own NVIDIA GPU: the models and node packs below | about 47 GB |
+| **Magnific** | The Magnific tab. Paste your [API key](https://www.magnific.com/user/api-keys), or add it later (section 4) | about 2 GB, with ComfyUI |
+| **DLSS 5** | Enhance with DLSS5 on the Post tab: the runtime from section 5, under its own terms. Needs an RTX 30, 40 or 50 card | 467 MB more |
+
+It always installs its own ComfyUI, Python and the Photoshop panel into the folder you choose, so any other
+ComfyUI or Python stays as it is. Without **All workflows** it uses a small CPU build of PyTorch: Magnific runs on Magnific's
+servers, and DLSS 5 has its own GPU worker.
+
+Afterwards, run **Start ComfyUI** from the desktop shortcut, leave its window open, and open the panel in
+Photoshop (**Window › Extensions (legacy) › GPC ComfyUI**).
+
+- **To add more or update:** run the setup program again and pick the same folder. It also carries on after a
+  stopped or failed install. Close ComfyUI and Photoshop first. Updates come from here rather than `git pull`.
+- **To remove it:** run `Uninstall.bat` in that folder. It deletes the folder's ComfyUI, models and images,
+  and the panel. The registry setting from section 2 stays, as other unsigned panels may use it.
+- **Licenses:** the models and the DLSS 5 runtime have their own terms; check them for your use.
+
+The rest of this page is the manual install, for an existing ComfyUI or for macOS.
+
+## Manual install
+
 Two parts, both from this repo:
 
 | Part | Where it goes |

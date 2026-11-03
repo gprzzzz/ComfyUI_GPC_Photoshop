@@ -27,7 +27,7 @@ paths = importlib.util.module_from_spec(_spec)
 sys.modules[_spec.name] = paths
 _spec.loader.exec_module(paths)
 
-RELEASE_URL = "https://github.com/Merserk/dlss5-visual-enhancer/releases/download/3.0/DLSS.5.Visual.Enhancer.v3.0.zip"
+RELEASE_URL = "https://github.com/Merserk/dlss5-visual-enhancer/releases/download/v3.0/DLSS.5.Visual.Enhancer.v3.0.zip"
 MARKER = "bin/runtime/"
 
 NOTICE = """
