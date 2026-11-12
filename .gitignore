@@ -7,6 +7,7 @@ sweep_out/
 magnific_api_key.txt
 # Local only: notes for coding assistants, the CEP debug port, design-tool state
 CLAUDE.md
+AGENTS.md
 photoshop/.debug
 .impeccable/
 # DLSS 5 runtime binaries (tools/install_dlss5_runtime.py): never committed
