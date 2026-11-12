@@ -36,7 +36,7 @@ const EFFECTS = [
   { node: "GPC_DLSS5_Enhance", label: "Enhance with DLSS5", busy: "Enhancing with DLSS5", about: "NVIDIA DLSS 5 neural rendering: crisper materials, foliage, skin and fabric." },
 ];
 // catalog: { [mode]: [{ name, template, info }] }, from every template on the server.
-const state = { client: null, catalog: {}, template: null, info: null, references: {}, values: {}, controlNodes: {}, hasSelection: true, jobs: [], preview: null, busy: false };
+const state = { client: null, catalog: {}, template: null, info: null, references: {}, values: {}, controlNodes: {}, hasSelection: true, jobs: [], preview: null, busy: false, colour: null, matchReference: null };
 
 // Photoshop calls run one at a time, so quick clicks can't interleave previews.
 let psQueue = Promise.resolve();
@@ -186,7 +186,10 @@ function selectTab(mode) {
   show($("templateView"), !post);
   show($("advancedView"), !post);
   show($("postView"), post);
-  if (post) return renderEffects();
+  if (post) {
+    renderMatchReference();
+    return renderEffects();
+  }
   renderContext();
   const entries = state.catalog[mode] || [];
   const select = $("template");
@@ -377,42 +380,51 @@ async function renderReferences() {
   const box = $("references");
   box.innerHTML = "";
   for (const ref of refs) {
-    const chosen = state.references[ref.slot];
-    const select = el("select", { "aria-label": ref.label });
-    select.appendChild(el("option", { value: "", text: "None" }));
-    select.appendChild(el("option", { value: "file", text: "Image file…" }));
-    if (chosen && chosen.kind === "file") select.appendChild(el("option", { value: "picked", text: chosen.file.name }));
-    for (const layer of layers) select.appendChild(el("option", { value: "layer:" + layer.id, text: layer.name }));
-    select.value = !chosen ? "" : chosen.kind === "file" ? "picked" : "layer:" + chosen.id;
-    select.addEventListener("change", async () => {
-      if (select.value === "file") {
-        const file = await ps.pickImageFile();
-        if (file) state.references[ref.slot] = { kind: "file", file };
-      } else if (select.value.startsWith("layer:")) {
-        state.references[ref.slot] = { kind: "layer", id: Number(select.value.slice(6)) };
-      } else if (select.value === "") {
-        delete state.references[ref.slot];
-      }
+    box.appendChild(referenceSlot(ref.label, state.references[ref.slot], layers, (chosen) => {
+      if (chosen) state.references[ref.slot] = chosen;
+      else delete state.references[ref.slot];
       renderReferences();
-    });
-
-    const top = el("div", { class: "ref-top" }, [el("span", { class: "strong", text: ref.label })]);
-    if (chosen) {
-      top.appendChild(el("button", {
-        class: "clear-ref ghost",
-        html: ICONS.x,
-        "aria-label": "Remove " + ref.label,
-        title: "Remove",
-        onclick: () => {
-          delete state.references[ref.slot];
-          renderReferences();
-        },
-      }));
-    }
-    box.appendChild(el("div", { class: "ref" + (chosen ? "" : " empty-slot") }, [top, select]));
+    }));
   }
   renderMentions();
 }
+
+// One reference picker: None, an image file or a layer. onChange(chosen or null).
+function referenceSlot(label, chosen, layers, onChange) {
+  const select = el("select", { "aria-label": label });
+  select.appendChild(el("option", { value: "", text: "None" }));
+  select.appendChild(el("option", { value: "file", text: "Image file…" }));
+  if (chosen && chosen.kind === "file") select.appendChild(el("option", { value: "picked", text: chosen.file.name }));
+  for (const layer of layers) select.appendChild(el("option", { value: "layer:" + layer.id, text: layer.name }));
+  select.value = !chosen ? "" : chosen.kind === "file" ? "picked" : "layer:" + chosen.id;
+  select.addEventListener("change", async () => {
+    if (select.value === "file") {
+      const file = await ps.pickImageFile();
+      onChange(file ? { kind: "file", file } : chosen || null);
+    } else if (select.value.startsWith("layer:")) {
+      const id = Number(select.value.slice(6));
+      const layer = layers.find((l) => l.id === id);
+      onChange({ kind: "layer", id, name: layer ? layer.name : "layer" });
+    } else if (select.value === "") {
+      onChange(null);
+    }
+  });
+
+  const top = el("div", { class: "ref-top" }, [el("span", { class: "strong", text: label })]);
+  if (chosen) {
+    top.appendChild(el("button", {
+      class: "clear-ref ghost",
+      html: ICONS.x,
+      "aria-label": "Remove " + label,
+      title: "Remove",
+      onclick: () => onChange(null),
+    }));
+  }
+  return el("div", { class: "ref" + (chosen ? "" : " empty-slot") }, [top, select]);
+}
+
+// A chosen reference's PNG bytes.
+const referenceBytes = (ref) => (ref.kind === "file" ? ps.readFile(ref.file) : ps.exportLayer(ref.id));
 
 // --- generating ---
 
@@ -473,8 +485,7 @@ async function generate() {
     const references = {};
     for (const [slot, ref] of Object.entries(state.references)) {
       if (!ref) continue;
-      const bytes = ref.kind === "file" ? await ps.readFile(ref.file) : await ps.exportLayer(ref.id);
-      references[slot] = toBase64(bytes);
+      references[slot] = toBase64(await referenceBytes(ref));
     }
 
     const locked = $("lockSeed").getAttribute("aria-pressed") === "true";
@@ -583,6 +594,115 @@ async function runEffect(effect) {
     state.effect = null;
     renderEffects();
   }
+}
+
+// --- colour check and Match to Reference (Post tab) ---
+
+// The whole visible image as a base64 PNG, for measuring.
+async function visibleImage() {
+  const doc = await ps.activeDocument();
+  await clearPreview();
+  const canvas = await ps.exportCanvas({ left: 0, top: 0, right: doc.width, bottom: doc.height });
+  return { doc, image: toBase64(canvas.image) };
+}
+
+const colourButtons = () => [$("colourCheck"), $("colourFix"), $("match")];
+
+// Runs a colour job with the Post tab's buttons disabled; reports errors.
+async function colourJob(button, busyText, fn) {
+  if (state.busy) return;
+  if (!state.client) return message("Not connected to ComfyUI: click the dot at the top right.", true);
+  const label = button.textContent;
+  state.busy = true;
+  renderEffects(true);
+  for (const b of colourButtons()) b.disabled = true;
+  button.textContent = busyText;
+  message("");
+  try {
+    await fn();
+  } catch (e) {
+    message(e.message, true);
+  } finally {
+    if (button.textContent === busyText) button.textContent = label;
+    for (const b of colourButtons()) b.disabled = false;
+    setBusy(false);
+  }
+}
+
+function showFindings(findings, heading = "") {
+  const box = $("colourResult");
+  box.innerHTML = "";
+  if (heading) box.appendChild(el("span", { class: "subheading", text: heading }));
+  for (const f of findings) {
+    const body = el("div", {}, [el("span", { class: "strong", text: f.title + " " }), el("span", { class: f.status === "skip" ? "muted" : "", text: f.text })]);
+    if (f.swatches) {
+      const [now, aim] = f.swatches;
+      body.appendChild(el("div", { class: "swatches small muted" }, [
+        el("span", { class: "swatch", style: "background:" + now, title: "Now " + now }),
+        document.createTextNode(now + " →"),
+        el("span", { class: "swatch", style: "background:" + aim, title: "Aim " + aim }),
+        document.createTextNode(aim),
+      ]));
+    }
+    const dot = { ok: "ok", warn: "warn", info: "info" }[f.status] || "";
+    box.appendChild(el("div", { class: "finding" }, [el("span", { class: "dot " + dot, title: f.status }), body]));
+  }
+  show(box, true);
+}
+
+function checkColours() {
+  return colourJob($("colourCheck"), "Measuring…", async () => {
+    const { doc, image } = await visibleImage();
+    const result = await state.client.colour("check", { image });
+    state.colour = { docId: doc.id, layers: result.layers };
+    showFindings(result.findings);
+    const n = result.layers.length;
+    show($("colourFix"), n > 0);
+    $("colourFix").textContent = `Add ${n} fix${n === 1 ? "" : "es"} as adjustment layers`;
+  });
+}
+
+function addColourFixes() {
+  const pending = state.colour;
+  if (!pending || !pending.layers.length) return;
+  return colourJob($("colourFix"), "Adding layers…", async () => {
+    await inPhotoshop(() => ps.addAdjustments(pending.docId, "GPC colour check", pending.layers));
+    state.colour = null;
+    show($("colourFix"), false);
+    message("Added the fixes as a group of adjustment layers. Check colours again to see what's left.");
+  });
+}
+
+async function renderMatchReference() {
+  const layers = await ps.layerList();
+  const box = $("matchReference");
+  box.innerHTML = "";
+  box.appendChild(referenceSlot("Reference", state.matchReference, layers, (chosen) => {
+    state.matchReference = chosen;
+    renderMatchReference();
+  }));
+}
+
+function matchReference() {
+  const ref = state.matchReference;
+  if (!ref) return message("Choose a reference image or layer to match.", true);
+  return colourJob($("match"), "Matching…", async () => {
+    const reference = toBase64(await referenceBytes(ref));
+    const { doc, image } = await visibleImage();
+    const result = await state.client.colour("match", { image, reference });
+    state.colour = null;
+    show($("colourFix"), false);
+    if (!result.layers.length) {
+      showFindings(result.findings, "Match to reference");
+      return message("The image already matches the reference closely: nothing added.");
+    }
+    const name = ref.kind === "file" ? ref.file.name : ref.name;
+    await inPhotoshop(() => ps.addAdjustments(doc.id, "GPC match: " + name, result.layers));
+    // Then the colour check on the matched image, so a reference can't pull the sky off unnoticed.
+    const after = await state.client.colour("check", { image: (await visibleImage()).image });
+    const warnings = after.findings.filter((f) => f.status === "warn");
+    showFindings(result.findings.concat(warnings), warnings.length ? "Matched · colour check found" : "Matched · colour check passes");
+  });
 }
 
 // --- results ---
@@ -818,6 +938,9 @@ $("autoPreview").addEventListener("change", () => {
   save();
 });
 $("clear").addEventListener("click", clearResults);
+$("colourCheck").addEventListener("click", checkColours);
+$("colourFix").addEventListener("click", addColourFixes);
+$("match").addEventListener("click", matchReference);
 $("toggleAdvanced").addEventListener("click", () => {
   const open = $("advanced").classList.contains("hidden");
   show($("advanced"), open);
@@ -827,6 +950,7 @@ $("toggleAdvanced").addEventListener("click", () => {
 // So does the button's "selection" / "image".
 document.body.addEventListener("mouseenter", () => {
   if (state.info) renderReferences();
+  if (settings.tab === POST.id) renderMatchReference();
   refreshSelection();
 });
 

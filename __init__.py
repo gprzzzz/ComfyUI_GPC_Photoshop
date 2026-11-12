@@ -1,10 +1,12 @@
 """GPC Photoshop - ComfyUI nodes and template server for the GPC Photoshop panel."""
 
 from .nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
+from .nodes.colour import register_routes as register_colour_routes
 from .nodes.templates import register_routes
 
 try:
     register_routes()
+    register_colour_routes()
 except ImportError:  # outside a running ComfyUI (tests)
     pass
 

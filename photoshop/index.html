@@ -65,10 +65,27 @@
       </div>
       </div>
 
-      <section id="postView" class="block post hidden">
-        <span class="muted small">Effects on the whole image, added as a smart object.</span>
-        <div id="effects" class="effects"></div>
-      </section>
+      <div id="postView" class="view hidden">
+        <section class="block post">
+          <span class="muted small">Effects on the whole image, added as a smart object.</span>
+          <div id="effects" class="effects"></div>
+        </section>
+
+        <section class="block">
+          <span class="heading">Colour</span>
+          <span class="muted small">Measures the visible image against CommonPoint's natural-colour targets (hues in Photoshop's degrees). Fixes come as adjustment layers you can open, tune or delete.</span>
+          <button id="colourCheck" class="outline wide">Check colours</button>
+          <div id="colourResult" class="findings hidden"></div>
+          <button id="colourFix" class="outline wide hidden">Add fixes as adjustment layers</button>
+        </section>
+
+        <section class="block">
+          <span class="heading">Match to reference</span>
+          <span class="muted small">Levels, then the neutrals' balance, then hue and saturation per colour range, moved toward the reference (within limits, so it stays natural).</span>
+          <div id="matchReference" class="ref-grid single"></div>
+          <button id="match" class="outline wide">Match to reference</button>
+        </section>
+      </div>
       <div id="message" class="message"></div>
 
       <div id="advancedView" class="view">

@@ -261,3 +261,70 @@ test("the bridge writes stacked results at the crop's scale and passes the mask'
   assert.match(calls[0], /^gpcStack\(1,42,\[".*stack_\d+_0\.png"\],1,".*stack_\d+_mask\.png",10,20,26\.5,18\.5\)$/);
   delete global.window;
 });
+
+// Records what each ActionDescriptor holds, as { key: value } with lists as arrays.
+function recordingActions(ps, made) {
+  class Desc {
+    constructor() { this.v = {}; }
+    putInteger(k, v) { this.v[k] = v; }
+    putDouble(k, v) { this.v[k] = v; }
+    putBoolean(k, v) { this.v[k] = v; }
+    putEnumerated(k, t, v) { this.v[k] = v; }
+    putReference(k, r) { this.v[k] = r.v; }
+    putObject(k, c, d) { this.v[k] = { class: c, ...d.v }; }
+    putList(k, l) { this.v[k] = l.v; }
+  }
+  class List {
+    constructor() { this.v = []; }
+    putInteger(v) { this.v.push(v); }
+    putObject(c, d) { this.v.push({ class: c, ...d.v }); }
+  }
+  class Ref {
+    putClass(c) { this.v = c; }
+    putEnumerated(c, t, v) { this.v = v; }
+  }
+  Object.assign(ps, {
+    ActionDescriptor: Desc, ActionList: List, ActionReference: Ref,
+    charIDToTypeID: (s) => s, stringIDToTypeID: (s) => s,
+    executeAction(id, desc) { made.push({ id, ...desc.v }); },
+  });
+}
+
+test("gpcAddAdjustments builds a named group of Hue/Sat and Levels layers with Blend If, bottom to top", () => {
+  const ps = fakePhotoshop();
+  const doc = ps.app.activeDocument;
+  const made = [];
+  recordingActions(ps, made);
+  const moves = [];
+  let nextId = 100;
+  const layer = (name) => ({ id: nextId++, name, move(rel, where) { moves.push([this.name, rel.name, where]); } });
+  doc.layerSets = { add: () => { const g = layer(""); doc.layers.unshift(g); return g; } };
+  const executeAction = ps.executeAction;
+  ps.executeAction = (id, desc) => {
+    executeAction(id, desc);
+    if (id === "make") doc.activeLayer = layer("new");
+  };
+  ps.BlendMode = { LUMINOSITY: "lum" };
+  ps.ElementPlacement = { INSIDE: "inside", PLACEBEFORE: "before" };
+  doc.suspendHistory = (title, code) => vm.runInContext(code, ps);
+  ps.$ = { global: ps };
+  doc.layers.unshift({ id: 1, name: "GPC colour check", typename: "LayerSet", layers: [] });
+
+  const specs = [
+    { kind: "levels", name: "Levels: blacks 14%→3%", channels: { composite: { input: [30, 255], gamma: 1, output: [0, 255] } }, blendMode: "luminosity", blendIf: null },
+    { kind: "hueSat", name: "Sky hue 185°→205°", ranges: [{ slot: 4, ramps: [155, 175, 200, 220], hue: 20, saturation: 0, lightness: 0 }], master: null, blendIf: [80, 100, 255, 255], blendMode: "normal" },
+  ];
+  const id = ps.gpcAddAdjustments(7, "GPC colour check", specs);
+  assert.match(id, /^\d+$/);
+  assert.strictEqual(doc.layers[0].name, "GPC colour check 2");
+
+  // Levels, then Hue/Sat, then Blend If on the Hue/Sat layer only.
+  assert.deepStrictEqual(made.map((m) => m.id), ["make", "make", "setd"]);
+  const [levels, hueSat, setd] = made;
+  assert.strictEqual(levels.using.type.class, "levels");
+  assert.deepStrictEqual(levels.using.type.adjustment, [{ class: "levelsAdjustment", channel: "composite", input: [30, 255], gamma: 1, output: [0, 255] }]);
+  assert.strictEqual(hueSat.using.type.class, "hueSaturation");
+  assert.deepStrictEqual(hueSat.using.type.adjustment[1], { class: "hueSatAdjustmentV2", localRange: 4, beginRamp: 155, beginSustain: 175, endSustain: 200, endRamp: 220, hue: 20, saturation: 0, lightness: 0 });
+  assert.deepStrictEqual(setd["T   "].blendRange[0], { class: "blendRange", channel: "gray", srcBlackMin: 0, srcBlackMax: 0, srcWhiteMin: 255, srcWhiteMax: 255, destBlackMin: 80, destBlackMax: 100, destWhiteMin: 255, destWhiteMax: 255 });
+  assert.deepStrictEqual(moves, [["Levels: blacks 14%→3%", "GPC colour check 2", "inside"], ["Sky hue 185°→205°", "Levels: blacks 14%→3%", "before"]]);
+});

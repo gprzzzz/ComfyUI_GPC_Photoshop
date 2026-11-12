@@ -442,6 +442,148 @@ function gpcRemoveLayer(docId, layerId) {
   });
 }
 
+// --- adjustment layers (the colour check and Match to Reference) ---
+
+function gpcS(s) {
+  return stringIDToTypeID(s);
+}
+
+function gpcIntList(values) {
+  var list = new ActionList();
+  for (var i = 0; i < values.length; i++) list.putInteger(values[i]);
+  return list;
+}
+
+// Makes an adjustment layer above the active layer; type is "hueSaturation" or "levels".
+function gpcMakeAdjustment(type, settings) {
+  var desc = new ActionDescriptor();
+  var ref = new ActionReference();
+  ref.putClass(gpcS("adjustmentLayer"));
+  desc.putReference(charIDToTypeID("null"), ref);
+  var layer = new ActionDescriptor();
+  layer.putObject(gpcS("type"), gpcS(type), settings);
+  desc.putObject(gpcS("using"), gpcS("adjustmentLayer"), layer);
+  executeAction(gpcS("make"), desc, DialogModes.NO);
+}
+
+// Hue/Saturation: the master settings, then each colour range with its four
+// range sliders (begin ramp, begin sustain, end sustain, end ramp; degrees).
+function gpcHueSatSettings(spec) {
+  var d = new ActionDescriptor();
+  d.putEnumerated(gpcS("presetKind"), gpcS("presetKindType"), gpcS("presetKindCustom"));
+  d.putBoolean(gpcS("colorize"), false);
+  var list = new ActionList();
+  var m = spec.master || { hue: 0, saturation: 0, lightness: 0 };
+  var master = new ActionDescriptor();
+  master.putInteger(gpcS("hue"), m.hue);
+  master.putInteger(gpcS("saturation"), m.saturation);
+  master.putInteger(gpcS("lightness"), m.lightness);
+  list.putObject(gpcS("hueSatAdjustmentV2"), master);
+  for (var i = 0; i < spec.ranges.length; i++) {
+    var r = spec.ranges[i];
+    var a = new ActionDescriptor();
+    a.putInteger(gpcS("localRange"), r.slot);
+    a.putInteger(gpcS("beginRamp"), r.ramps[0]);
+    a.putInteger(gpcS("beginSustain"), r.ramps[1]);
+    a.putInteger(gpcS("endSustain"), r.ramps[2]);
+    a.putInteger(gpcS("endRamp"), r.ramps[3]);
+    a.putInteger(gpcS("hue"), r.hue);
+    a.putInteger(gpcS("saturation"), r.saturation);
+    a.putInteger(gpcS("lightness"), r.lightness);
+    list.putObject(gpcS("hueSatAdjustmentV2"), a);
+  }
+  d.putList(gpcS("adjustment"), list);
+  return d;
+}
+
+// Levels: per channel ("composite", "red", "green", "blue") inputs, gamma, outputs.
+function gpcLevelsSettings(spec) {
+  var d = new ActionDescriptor();
+  d.putEnumerated(gpcS("presetKind"), gpcS("presetKindType"), gpcS("presetKindCustom"));
+  var list = new ActionList();
+  for (var name in spec.channels) {
+    var c = spec.channels[name];
+    var a = new ActionDescriptor();
+    var ref = new ActionReference();
+    ref.putEnumerated(gpcS("channel"), gpcS("channel"), gpcS(name));
+    a.putReference(gpcS("channel"), ref);
+    a.putList(gpcS("input"), gpcIntList(c.input));
+    a.putDouble(gpcS("gamma"), c.gamma);
+    a.putList(gpcS("output"), gpcIntList(c.output));
+    list.putObject(gpcS("levelsAdjustment"), a);
+  }
+  d.putList(gpcS("adjustment"), list);
+  return d;
+}
+
+// Blend If on the active layer: shows it only where the underlying layer's gray is
+// in range = [black min, black max, white min, white max] (0-255, split sliders).
+function gpcBlendIf(range) {
+  var desc = new ActionDescriptor();
+  var ref = new ActionReference();
+  ref.putEnumerated(charIDToTypeID("Lyr "), charIDToTypeID("Ordn"), charIDToTypeID("Trgt"));
+  desc.putReference(charIDToTypeID("null"), ref);
+  var blend = new ActionDescriptor();
+  var channel = new ActionReference();
+  channel.putEnumerated(gpcS("channel"), gpcS("channel"), gpcS("gray"));
+  blend.putReference(gpcS("channel"), channel);
+  blend.putInteger(gpcS("srcBlackMin"), 0);
+  blend.putInteger(gpcS("srcBlackMax"), 0);
+  blend.putInteger(gpcS("srcWhiteMin"), 255);
+  blend.putInteger(gpcS("srcWhiteMax"), 255);
+  blend.putInteger(gpcS("destBlackMin"), range[0]);
+  blend.putInteger(gpcS("destBlackMax"), range[1]);
+  blend.putInteger(gpcS("destWhiteMin"), range[2]);
+  blend.putInteger(gpcS("destWhiteMax"), range[3]);
+  var list = new ActionList();
+  list.putObject(gpcS("blendRange"), blend);
+  var layer = new ActionDescriptor();
+  layer.putList(gpcS("blendRange"), list);
+  desc.putObject(charIDToTypeID("T   "), charIDToTypeID("Lyr "), layer);
+  executeAction(charIDToTypeID("setd"), desc, DialogModes.NO);
+}
+
+// name, or "name 2", "name 3", ... if the document's top level already has it.
+function gpcUniqueName(doc, name) {
+  var taken = {};
+  for (var i = 0; i < doc.layers.length; i++) taken[doc.layers[i].name] = true;
+  if (!taken[name]) return name;
+  var n = 2;
+  while (taken[name + " " + n]) n++;
+  return name + " " + n;
+}
+
+// Adds a group called name at the top of document docId holding the adjustment
+// layers in specs (bottom to top), as one history step. Returns the group's id.
+function gpcAddAdjustments(docId, name, specs) {
+  return gpcRun(function () {
+    var target = gpcFindDocument(docId);
+    if (!target) return "ERROR: The document this was checked for is closed.";
+    app.activeDocument = target;
+    name = gpcUniqueName(target, name);
+    var id = gpcInHistory(target, name, function () {
+      target.activeLayer = target.layers[0];
+      var group = target.layerSets.add();
+      group.name = name;
+      var previous = null;
+      for (var i = 0; i < specs.length; i++) {
+        var spec = specs[i];
+        target.activeLayer = previous || group;
+        gpcMakeAdjustment(spec.kind == "levels" ? "levels" : "hueSaturation", spec.kind == "levels" ? gpcLevelsSettings(spec) : gpcHueSatSettings(spec));
+        var layer = target.activeLayer;
+        layer.name = spec.name;
+        if (spec.blendMode == "luminosity") layer.blendMode = BlendMode.LUMINOSITY;
+        if (spec.blendIf) gpcBlendIf(spec.blendIf);
+        if (previous) layer.move(previous, ElementPlacement.PLACEBEFORE);
+        else layer.move(group, ElementPlacement.INSIDE);
+        previous = layer;
+      }
+      return group.id;
+    });
+    return String(id);
+  });
+}
+
 // Opens a result PNG as a new, untitled document called name, at the given resolution.
 function gpcOpenAsDocument(path, name, resolution) {
   return gpcRun(function () {
