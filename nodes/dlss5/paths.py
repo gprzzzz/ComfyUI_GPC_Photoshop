@@ -12,13 +12,16 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-PACK_ROOT = Path(__file__).resolve().parents[2]
+# Where ComfyUI loaded the pack from, and where it really is: they differ when the
+# pack is linked into a second ComfyUI.
+PACK_ROOT = Path(os.path.abspath(__file__)).parents[2]
+REAL_PACK_ROOT = Path(__file__).resolve().parents[2]
 # ComfyUI/custom_nodes/<this pack> -> ComfyUI
 COMFY_ROOT = PACK_ROOT.parents[1]
 BUNDLED_RUNTIME = PACK_ROOT / "dlss5_runtime"
 RUNTIME_FILE = "dlss5_runtime.txt"
-# Blueforcer's pack, when it's installed next to this one.
-UPSTREAM_PACK = PACK_ROOT.parent / "ComfyUI-DLSS5-Enhancer"
+# Blueforcer's pack, when it's installed next to this one (on either side of a link).
+UPSTREAM_PACKS = list(dict.fromkeys(root.parent / "ComfyUI-DLSS5-Enhancer" for root in (PACK_ROOT, REAL_PACK_ROOT)))
 
 RUNTIME_ENV = "DLSS5_RUNTIME_DIR"
 
@@ -114,9 +117,9 @@ def _read_line(path: Path) -> str:
         return ""
 
 
-def _upstream_config() -> str:
+def _upstream_config(pack: Path) -> str:
     try:
-        data = json.loads((UPSTREAM_PACK / "config.json").read_text(encoding="utf-8"))
+        data = json.loads((pack / "config.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return ""
     return data.get("runtime_dir", "") if isinstance(data, dict) else ""
@@ -127,10 +130,10 @@ def _runtime_candidates() -> list[Path]:
         os.environ.get(RUNTIME_ENV, ""),
         _read_line(runtime_file()),
         str(BUNDLED_RUNTIME),
-        _upstream_config(),
-        str(UPSTREAM_PACK / "runtime"),
     ]
-    return [Path(v) for v in values if v]
+    for pack in UPSTREAM_PACKS:
+        values += [_upstream_config(pack), str(pack / "runtime")]
+    return [Path(v) for v in dict.fromkeys(values) if v]
 
 
 def find_runtime(override: str | os.PathLike[str] | None = None) -> RuntimeLayout:
