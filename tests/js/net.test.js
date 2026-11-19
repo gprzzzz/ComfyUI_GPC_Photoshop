@@ -39,6 +39,16 @@ test("unreachable servers give a readable error", async () => {
   await assert.rejects(request("http://127.0.0.1:1/x"), /Can't reach http:\/\/127\.0\.0\.1:1: ECONNREFUSED/);
 });
 
+test("a server that never answers times out instead of hanging the panel", async () => {
+  const server = http.createServer(() => {}); // accepts the request, then says nothing
+  const url = await listen(server);
+  try {
+    await assert.rejects(request(url + "/slow", { timeout: 200 }), /no answer for 1s/);
+  } finally {
+    server.close();
+  }
+});
+
 test("the socket reads text across chunks, skips binary, answers pings", async () => {
   let pong;
   const server = http.createServer();

@@ -24,6 +24,13 @@ the document they were made for, even if you switch documents while ComfyUI work
 Results live in the panel until you click Clear or close it; they aren't saved in your document unless
 you keep them.
 
+**Stop** (the square button beside Generate) lets the panel go at once, then waits for ComfyUI to
+agree. ComfyUI can't always stop: a node stuck inside one long operation never reads the interrupt.
+Until its queue shows the job gone, the button reads *Waiting for ComfyUI to stop* with the seconds
+elapsed, and Generate stays locked so a new job can't queue behind the one you thought you stopped.
+Restart ComfyUI if it never lets go. The panel unlocks by itself once the queue is empty, and
+Photoshop doesn't need restarting either way.
+
 <br clear="right">
 
 ## Settings
@@ -129,7 +136,8 @@ What happens when you click **Edit selection**:
 Good to know:
 
 - **Batch** is 1 by default: each result is a separate paid request.
-- **Cancel** stops waiting, but Magnific still finishes the results and charges for them.
+- **Cancel** frees the panel, but Magnific still finishes the results and charges for them. Generate
+  stays locked until ComfyUI's queue drops the job.
 - Magnific sometimes refuses a request for a moment ("Error consuming credits", even with credits to
   spare). The node retries twice; if it's still refused, the results already started still come back,
   with a note.

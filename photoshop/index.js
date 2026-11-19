@@ -36,7 +36,9 @@ const EFFECTS = [
   { node: "GPC_DLSS5_Enhance", label: "Enhance with DLSS5", busy: "Enhancing with DLSS5", about: "NVIDIA DLSS 5 neural rendering: crisper materials, foliage, skin and fabric." },
 ];
 // catalog: { [mode]: [{ name, template, info }] }, from every template on the server.
-const state = { client: null, catalog: {}, template: null, info: null, references: {}, values: {}, controlNodes: {}, hasSelection: true, jobs: [], preview: null, busy: false, colour: null, matchReference: null };
+// limbo: { id, since, state, lost } while a stopped job is still in ComfyUI's queue.
+// server: the last node ComfyUI said it was running, for naming it in the limbo label.
+const state = { client: null, catalog: {}, template: null, info: null, references: {}, values: {}, controlNodes: {}, hasSelection: true, jobs: [], preview: null, busy: false, colour: null, matchReference: null, runId: null, limbo: null, server: { node: null, at: 0 } };
 
 // Photoshop calls run one at a time, so quick clicks can't interleave previews.
 let psQueue = Promise.resolve();
@@ -130,12 +132,19 @@ async function connect() {
   try {
     if (state.client) state.client.close();
     state.client = new ComfyClient(settings.server);
+    state.client.listeners.add(serverActivity);
     const names = await state.client.check();
     state.client.connect();
     connectionStatus(true, `Connected to ${settings.server}`);
     showConnection(false);
-    message("");
+    // A reconnect is how the panel gets back to a restarted ComfyUI; check the stopped
+    // job straight away rather than waiting for the next poll (or forever, if the
+    // client was dropped by a failed reconnect in between).
+    if (state.limbo) pollLimbo();
+    else message("");
     await loadCatalog(names);
+    // Loading templates selects one, which clears the message line.
+    if (state.limbo) sayLimbo();
   } catch (e) {
     state.client = null;
     connectionStatus(false, "Not connected: " + e.message);
@@ -451,19 +460,25 @@ async function refreshSelection() {
 function setBusy(busy, fraction = 0, text = "") {
   state.busy = busy;
   $("generate").classList.toggle("busy", busy);
-  show($("cancel"), busy);
+  $("generate").disabled = busy || !!state.limbo;
+  // Stop appears once ComfyUI owns the job: during the export there is nothing on the
+  // server to stop, and a button that does nothing is worse than no button.
+  show($("cancel"), (busy && !!state.runId) || !!state.limbo);
   renderEffects(busy, fraction, text);
   $("bar").style.width = busy ? Math.round(fraction * 100) + "%" : "0";
   if (busy) $("generateLabel").textContent = text;
+  else if (state.limbo) $("generateLabel").textContent = limboText();
   else $("generateLabel").innerHTML = `${idleLabel()} <span class="kbd">Ctrl+Enter</span>`;
 }
 
 async function generate() {
   if (state.busy) return;
+  if (state.limbo) return message(`ComfyUI is still finishing the stopped job. ${state.limbo.lost ? "It isn't answering: restart ComfyUI." : "Wait for it to let go."}`, true);
   if (!state.client || !state.template) return message("Not connected to ComfyUI: click the dot at the top right.", true);
   if (state.missing) return message(state.missing + " Then reload templates (the dot at the top right).", true);
   setBusy(true, 0, "Exporting…");
   message("");
+  let job = null;
   try {
     const doc = await ps.activeDocument();
     const selection = await ps.selectionBounds();
@@ -504,8 +519,10 @@ async function generate() {
     const doing = tiled ? "Generating · tiled" : banana ? `Waiting for Magnific${size ? " · " + size : ""}` : "Generating";
     setBusy(true, 0, tiled ? "Queued · tiled, about a minute" : banana ? doing + "…" : "Queued…");
     const id = await state.client.queue(prompt);
+    state.runId = id;
+    show($("cancel"), true); // ComfyUI owns the job now, so it can be stopped
     // Nano Banana results are larger than the crop: keep them as smart objects.
-    const job = addJob(doc, crop, seed, banana ? "smart object" : !upscale ? "inpaint" : whole ? "new document" : "smart object");
+    job = addJob(doc, crop, seed, banana ? "smart object" : !upscale ? "inpaint" : whole ? "new document" : "smart object");
     const progress = (value, max) => (banana ? `${doing} · ${value} of ${max} done` : `${doing} · step ${value} of ${max}`);
     // Nano Banana results show up one by one, before the run ends; until then they
     // preview with the plain selection as their mask.
@@ -520,6 +537,8 @@ async function generate() {
     };
     const notices = [];
     const entry = await state.client.wait(id, (f, value, max) => setBusy(true, f, max ? progress(value, max) : doing + "…"), early, (text) => notices.push(text));
+    state.runId = null;
+    show($("cancel"), false); // finished on the server; only the download is left
     const images = await state.client.outputImages(entry, state.info.outputs);
     job.masks = await state.client.outputImages(entry, state.info.outputs, "gpc_masks");
     setBusy(false);
@@ -532,9 +551,90 @@ async function generate() {
     job.stacked = !!banana && images.length > 1;
     if (images.length && (settings.autoPreview || previewing)) await preview(job, Math.min(shown, images.length - 1), { refresh: true });
   } catch (e) {
+    state.runId = null;
+    if (job) job.meta.textContent = job.meta.textContent.replace("generating…", e.cancelled ? "stopped" : "failed");
     setBusy(false);
-    message(e.message, true);
+    // stop() has already said what happened and what ComfyUI is doing about it.
+    if (!e.cancelled) message(e.message, true);
   }
+}
+
+// --- stopping ---
+
+// What the socket last said ComfyUI was running. Used to name the stuck node.
+function serverActivity(msg) {
+  const d = msg.data || {};
+  if (msg.type === "executing" && d.node) state.server = { node: d.node, at: Date.now() };
+}
+
+const LIMBO_POLL = 2000;
+
+function elapsed(since) {
+  const s = Math.max(0, Math.round((Date.now() - since) / 1000));
+  return s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
+}
+
+const limboText = () => (state.limbo.state === "unknown" ? "ComfyUI isn't answering" : "Waiting for ComfyUI to stop") + " · " + elapsed(state.limbo.since);
+
+// The line under the button. Re-stated after a reconnect, which reloads the
+// templates and clears the message.
+const limboMessage = () =>
+  state.limbo.state === "unknown"
+    ? "ComfyUI isn't answering. Restart it: the panel unlocks as soon as it's back."
+    : `Stopped.${state.limbo.node ? ` ComfyUI is still running ${state.limbo.node}.` : ""} Generating unlocks when ComfyUI lets go of the job.`;
+
+const sayLimbo = () => message(limboMessage(), state.limbo.state === "unknown");
+
+// Stop. The panel lets go at once, but ComfyUI's queue is checked until it does too:
+// a job you stopped is not a job ComfyUI has finished, and anything queued in between
+// would run behind the one you thought you had killed.
+function stop() {
+  if (!state.client) return;
+  const id = state.runId || (state.limbo && state.limbo.id);
+  if (!id) return;
+  const fresh = !state.limbo || state.limbo.id !== id;
+  state.runId = null;
+  if (fresh) {
+    if (state.limbo) clearInterval(state.limbo.timer);
+    state.limbo = { id, since: Date.now(), state: "running", node: state.server.node, lost: false, poll: false, timer: null };
+    sayLimbo();
+    state.limbo.timer = setInterval(pollLimbo, LIMBO_POLL);
+  }
+  // Sent every press: if the first request never landed, this one may.
+  state.client.cancel(id);
+  setBusy(false);
+  pollLimbo();
+}
+
+async function pollLimbo() {
+  const limbo = state.limbo;
+  if (!limbo || limbo.poll || !state.client) return;
+  limbo.poll = true;
+  let where;
+  try {
+    where = await state.client.where(limbo.id);
+  } catch (_) {
+    where = { state: "unknown" };
+  }
+  limbo.poll = false;
+  if (state.limbo !== limbo) return; // cleared or replaced while the server answered
+  const was = limbo.state;
+  limbo.state = where.state;
+  limbo.lost = where.state === "unknown";
+  if (where.state === "gone") return clearLimbo();
+  if (where.state !== was) sayLimbo();
+  if (!state.busy) setBusy(false); // refresh the elapsed time in the label
+}
+
+function clearLimbo() {
+  const limbo = state.limbo;
+  if (!limbo) return;
+  state.limbo = null;
+  clearInterval(limbo.timer);
+  // A restart closed the progress socket, and nothing else would reopen it.
+  if (state.client) state.client.reconnect();
+  message(limbo.lost ? "ComfyUI is back. Ready to generate." : "ComfyUI let go of the job. Ready to generate.");
+  setBusy(false);
 }
 
 // The Post tab's buttons. While one runs, it shows the progress and a cancel button.
@@ -545,7 +645,7 @@ function renderEffects(busy = state.busy, fraction = 0, text = "") {
       const button = el("button", { class: "primary" }, [el("span", { class: "fill" }), el("span", { class: "label", text: effect.label })]);
       button.addEventListener("click", () => runEffect(effect));
       const cancel = el("button", { class: "icon outline hidden", "aria-label": "Cancel", title: "Cancel", html: ICONS.stop });
-      cancel.addEventListener("click", () => state.client && state.client.interrupt().catch(() => {}));
+      cancel.addEventListener("click", stop);
       box.appendChild(el("div", { class: "effect" }, [el("div", { class: "run" }, [button, cancel]), el("span", { class: "muted small", text: effect.about })]));
       effect.row = { button, cancel };
     }
@@ -553,7 +653,8 @@ function renderEffects(busy = state.busy, fraction = 0, text = "") {
   for (const effect of EFFECTS) {
     const { button, cancel } = effect.row;
     const running = busy && state.effect === effect;
-    button.disabled = busy && !running;
+    // A stopped job still in ComfyUI's queue blocks new ones, same as the main button.
+    button.disabled = (busy || !!state.limbo) && !running;
     button.classList.toggle("busy", running);
     button.querySelector(".fill").style.width = running ? Math.round(fraction * 100) + "%" : "0";
     button.querySelector(".label").textContent = running ? text : effect.label;
@@ -564,10 +665,12 @@ function renderEffects(busy = state.busy, fraction = 0, text = "") {
 // Runs an effect over the whole image and keeps the result as a smart object over it.
 async function runEffect(effect) {
   if (state.busy) return;
+  if (state.limbo) return message("ComfyUI is still finishing the stopped job. " + (state.limbo.lost ? "It isn't answering: restart ComfyUI." : "Wait for it to let go."), true);
   if (!state.client) return message("Not connected to ComfyUI: click the dot at the top right.", true);
   state.effect = effect;
   setBusy(true, 0, "Exporting…");
   message("");
+  let job = null;
   try {
     const doc = await ps.activeDocument();
     await clearPreview();
@@ -580,16 +683,20 @@ async function runEffect(effect) {
     };
     setBusy(true, 0, effect.busy + "…");
     const id = await state.client.queue(prompt);
-    const job = addJob(doc, crop, 0, "smart object", { text: effect.label, tab: POST.label });
+    state.runId = id;
+    job = addJob(doc, crop, 0, "smart object", { text: effect.label, tab: POST.label });
     const entry = await state.client.wait(id, (f) => setBusy(true, f, effect.busy + "…"));
+    state.runId = null;
     const images = await state.client.outputImages(entry, ["3"]);
     setBusy(false);
     if (!images.length) return message(effect.label + " finished without an image.", true);
     showResults(job, images);
     await keep(job, 0);
   } catch (e) {
+    state.runId = null;
+    if (job) job.meta.textContent = job.meta.textContent.replace("generating…", e.cancelled ? "stopped" : "failed");
     setBusy(false);
-    message(e.message, true);
+    if (!e.cancelled) message(e.message, true);
   } finally {
     state.effect = null;
     renderEffects();
@@ -928,7 +1035,7 @@ $("reload").addEventListener("click", async () => {
 $("template").addEventListener("change", () => chooseTemplate($("template").value));
 $("reset").addEventListener("click", () => state.info && resetValues());
 $("generate").addEventListener("click", generate);
-$("cancel").addEventListener("click", () => state.client && state.client.interrupt().catch(() => {}));
+$("cancel").addEventListener("click", stop);
 $("lockSeed").addEventListener("click", () => {
   const on = $("lockSeed").getAttribute("aria-pressed") !== "true";
   $("lockSeed").setAttribute("aria-pressed", String(on));

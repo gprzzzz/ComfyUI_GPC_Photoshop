@@ -13,6 +13,8 @@ class ComfyClient {
     this.clientId = "gpc-ps-" + Math.random().toString(36).slice(2, 10);
     this.socket = null;
     this.listeners = new Set();
+    // The run being followed: { promptId, stop() }. One at a time.
+    this.pending = null;
   }
 
   async request(path, options = {}) {
@@ -93,8 +95,41 @@ class ComfyClient {
     }
   }
 
-  interrupt() {
-    return this.request("/interrupt", { method: "POST" });
+  // Stops a prompt: settles the wait at once, then asks the server to drop it.
+  // Whether the server let go is a separate question, answered by where().
+  cancel(promptId) {
+    if (this.pending && this.pending.promptId === promptId) this.pending.stop();
+    const headers = { "Content-Type": "application/json" };
+    // A pending prompt is only in the queue; a running one only answers to /interrupt.
+    // Servers that predate the prompt_id argument ignore the body and interrupt globally.
+    this.request("/queue", { method: "POST", headers, body: JSON.stringify({ delete: [promptId] }) }).catch(() => {});
+    this.request("/interrupt", { method: "POST", headers, body: JSON.stringify({ prompt_id: promptId }) }).catch(() => {});
+  }
+
+  // Where a prompt stands: "running", "pending", "gone" (finished, dropped, or a
+  // restarted server that never heard of it) or "unknown" (no answer).
+  async where(promptId) {
+    let queue;
+    try {
+      queue = await this.json("/queue");
+    } catch (_) {
+      return { state: "unknown" };
+    }
+    const { queue_running: running, queue_pending: pending } = queue || {};
+    // Anything but the expected shape is "we don't know": reporting "gone" would
+    // unlock the panel on a busy server.
+    if (!Array.isArray(running) || !Array.isArray(pending)) return { state: "unknown" };
+    const index = (list) => list.findIndex((item) => item && item[1] === promptId);
+    if (index(running) >= 0) return { state: "running" };
+    const ahead = index(pending);
+    if (ahead >= 0) return { state: "pending", ahead };
+    return { state: "gone" };
+  }
+
+  // A restarted ComfyUI has closed the progress socket; a half-dead one never says so.
+  reconnect() {
+    this.close();
+    this.connect();
   }
 
   // Progress messages over the websocket. Optional: run() also polls history,
@@ -133,8 +168,20 @@ class ComfyClient {
         done = true;
         clearInterval(timer);
         this.listeners.delete(listener);
+        if (this.pending === job) this.pending = null;
         fn(value);
       };
+      // cancel() settles this without touching the network, so a wedged server
+      // can't leave the panel waiting.
+      const job = {
+        promptId,
+        stop() {
+          const error = new Error("Stopped");
+          error.cancelled = true;
+          finish(reject, error);
+        },
+      };
+      this.pending = job;
       const listener = (msg) => {
         const d = msg.data || {};
         if (d.prompt_id && d.prompt_id !== promptId) return;
@@ -145,7 +192,11 @@ class ComfyClient {
         if (msg.type === "execution_interrupted") finish(reject, new Error("Cancelled"));
       };
       this.listeners.add(listener);
+      // One poll at a time: a server that stops answering mustn't stack requests.
+      let polling = false;
       const timer = setInterval(async () => {
+        if (polling) return;
+        polling = true;
         try {
           const history = await this.json("/history/" + promptId);
           const entry = history[promptId];
@@ -159,6 +210,8 @@ class ComfyClient {
           }
         } catch (_) {
           // keep polling; the server may be busy
+        } finally {
+          polling = false;
         }
       }, 1000);
     });

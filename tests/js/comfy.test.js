@@ -94,3 +94,78 @@ test("check() says why templates couldn't be listed", async () => {
     server.close();
   }
 });
+
+// A ComfyUI that accepts a prompt and then never finishes it.
+function stuckServer() {
+  const seen = [];
+  const server = http.createServer((req, res) => {
+    const send = (code, body) => {
+      res.writeHead(code, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(body));
+    };
+    if (req.url === "/prompt") return send(200, { prompt_id: "p9" });
+    if (req.url === "/history/p9") return send(200, {});
+    if (req.url === "/queue" || req.url === "/interrupt") {
+      let body = "";
+      req.on("data", (c) => (body += c));
+      req.on("end", () => {
+        seen.push({ url: req.url, body: JSON.parse(body) });
+        send(200, {});
+      });
+      return;
+    }
+    send(404, {});
+  });
+  return new Promise((resolve) => server.listen(0, () => resolve({ server, url: `http://127.0.0.1:${server.address().port}/`, seen })));
+}
+
+async function until(fn, ms = 2000) {
+  const started = Date.now();
+  while (!fn()) {
+    if (Date.now() - started > ms) throw new Error("timed out");
+    await new Promise((r) => setTimeout(r, 10));
+  }
+}
+
+test("cancel frees the panel without waiting on the server", async () => {
+  const { server, url, seen } = await stuckServer();
+  try {
+    const client = new ComfyClient(url);
+    const id = await client.queue({ 1: {} });
+    const waiting = client.wait(id);
+    const started = Date.now();
+    client.cancel(id);
+    await assert.rejects(waiting, (e) => e.cancelled === true && e.message === "Stopped");
+    assert.ok(Date.now() - started < 500, `cancel took ${Date.now() - started}ms; it must not wait for the server`);
+    await until(() => seen.length >= 2);
+    const sent = Object.fromEntries(seen.map((s) => [s.url, s.body]));
+    // Deleting reaches a pending prompt; interrupting reaches a running one. Both are sent:
+    // the panel doesn't know yet which one this is.
+    assert.deepStrictEqual(sent["/queue"], { delete: ["p9"] });
+    assert.deepStrictEqual(sent["/interrupt"], { prompt_id: "p9" });
+  } finally {
+    server.close();
+  }
+});
+
+test("where() reads ComfyUI's queue, and knows when there's no answer", async () => {
+  let body = { queue_running: [], queue_pending: [] };
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify(body));
+  });
+  const url = await new Promise((resolve) => server.listen(0, () => resolve(`http://127.0.0.1:${server.address().port}/`)));
+  const client = new ComfyClient(url);
+  body = { queue_running: [[1, "p1"]], queue_pending: [] };
+  assert.deepStrictEqual(await client.where("p1"), { state: "running" });
+  body = { queue_running: [], queue_pending: [[2, "someone-else"], [3, "p1"]] };
+  assert.deepStrictEqual(await client.where("p1"), { state: "pending", ahead: 1 });
+  body = { queue_running: [], queue_pending: [] };
+  assert.deepStrictEqual(await client.where("p1"), { state: "gone" });
+  // A payload we don't recognize must never read as "gone": that would unlock the
+  // panel while ComfyUI is still busy.
+  body = {};
+  assert.deepStrictEqual(await client.where("p1"), { state: "unknown" });
+  await new Promise((resolve) => server.close(resolve));
+  assert.deepStrictEqual(await client.where("p1"), { state: "unknown" });
+});

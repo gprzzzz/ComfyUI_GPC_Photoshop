@@ -22,7 +22,8 @@ const target = (url, extra) => ({
 });
 
 // A fetch-like request. Resolves to { ok, status, statusText, json(), text(), arrayBuffer() }.
-function request(href, { method = "GET", headers = {}, body } = {}) {
+// `timeout` (ms of silence) keeps a wedged server from leaving the panel waiting.
+function request(href, { method = "GET", headers = {}, body, timeout = 30000 } = {}) {
   const url = new URL(href);
   return new Promise((resolve, reject) => {
     const req = transport(url).request(target(url, { method, headers }), (res) => {
@@ -41,6 +42,7 @@ function request(href, { method = "GET", headers = {}, body } = {}) {
       });
       res.on("error", reject);
     });
+    req.setTimeout(timeout, () => req.destroy(new Error(`no answer for ${Math.max(1, Math.round(timeout / 1000))}s`)));
     req.on("error", (e) => reject(new Error(`Can't reach ${url.origin}: ${e.code || e.message}`)));
     if (body !== undefined) req.write(body);
     req.end();
