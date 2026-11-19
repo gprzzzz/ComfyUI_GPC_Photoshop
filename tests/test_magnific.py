@@ -138,9 +138,10 @@ def test_templates_use_their_model_and_the_magnific_tab(pkg):
     assert seen == set(m.MODELS)
 
 
-def _live_stubs(m, monkeypatch, refuse_after, refusals=99):
+def _live_stubs(m, monkeypatch, refuse_after, refusals=99, status=None):
     """Stand-ins for ComfyUI and Magnific: after `refuse_after` tasks, the next
-    `refusals` POSTs are refused (then they go through again)."""
+    `refusals` POSTs are refused (then they go through again). `status(url)`, if
+    given, answers the polls (or raises)."""
     monkeypatch.setenv("MAGNIFIC_API_KEY", "k")
     for name in ("POLL_SECONDS", "START_GAP_SECONDS"):
         monkeypatch.setattr(m, name, 0)
@@ -166,6 +167,8 @@ def _live_stubs(m, monkeypatch, refuse_after, refusals=99):
             return {"data": {"task_id": f"t{len(posts)}"}}
         if url.startswith("https://img/"):
             return png((64, 64))
+        if status:
+            return status(url)
         return {"data": {"status": "COMPLETED", "generated": ["https://img/x.png"]}}
 
     monkeypatch.setattr(m, "_request", fake)
@@ -199,4 +202,53 @@ def test_a_first_start_refused_even_after_retries_is_an_error(pkg, monkeypatch, 
     m = magnific(pkg)
     _live_stubs(m, monkeypatch, refuse_after=0)
     with pytest.raises(RuntimeError, match="consuming credits"):
+        m.GPCMagnificNanoBanana().generate(torch.rand((1, 64, 64, 3)), "make it red", "Nano Banana 2.1", "auto", 2, "default")
+
+
+def test_a_dropped_poll_is_waited_out_not_thrown_away(pkg, monkeypatch, tmp_path):
+    m = magnific(pkg)
+    polls = []
+
+    def status(url):
+        polls.append(url)
+        if len(polls) <= 2:
+            raise RuntimeError("Magnific can't be reached: timed out")
+        if len(polls) == 3:
+            raise m.MagnificError("Magnific: HTTP 502", 502)
+        return {"data": {"status": "COMPLETED", "generated": ["https://img/x.png"]}}
+
+    _live_stubs(m, monkeypatch, refuse_after=99, status=status)
+    (out,) = m.GPCMagnificNanoBanana().generate(torch.rand((1, 64, 64, 3)), "make it red", "Nano Banana 2.1", "auto", 1, "default")
+    assert out.shape[0] == 1
+
+
+def test_a_poll_that_never_answers_gives_up(pkg, monkeypatch, tmp_path):
+    m = magnific(pkg)
+
+    def status(url):
+        raise RuntimeError("Magnific can't be reached: timed out")
+
+    _live_stubs(m, monkeypatch, refuse_after=99, status=status)
+    with pytest.raises(RuntimeError, match="stopped answering"):
+        m.GPCMagnificNanoBanana().generate(torch.rand((1, 64, 64, 3)), "make it red", "Nano Banana 2.1", "auto", 1, "default")
+
+
+def test_one_failed_result_keeps_the_rest_of_the_batch(pkg, monkeypatch, tmp_path):
+    m = magnific(pkg)
+
+    def status(url):
+        if url.endswith("/t2"):
+            return {"data": {"status": "FAILED"}}
+        return {"data": {"status": "COMPLETED", "generated": ["https://img/x.png"]}}
+
+    sent = _live_stubs(m, monkeypatch, refuse_after=99, status=status)
+    (out,) = m.GPCMagnificNanoBanana().generate(torch.rand((1, 64, 64, 3)), "make it red", "Nano Banana 2.1", "auto", 3, "default")
+    assert out.shape[0] == 2
+    assert [d["text"] for e, d in sent if e == "gpc_ps.notice"] == ["1 of 3 results failed at Magnific (often the safety filter)."]
+
+
+def test_a_batch_where_every_result_failed_is_an_error(pkg, monkeypatch, tmp_path):
+    m = magnific(pkg)
+    _live_stubs(m, monkeypatch, refuse_after=99, status=lambda url: {"data": {"status": "FAILED"}})
+    with pytest.raises(RuntimeError, match="generation failed"):
         m.GPCMagnificNanoBanana().generate(torch.rand((1, 64, 64, 3)), "make it red", "Nano Banana 2.1", "auto", 2, "default")

@@ -79,22 +79,6 @@ class ComfyClient {
     return (await res.json()).prompt_id;
   }
 
-  // The colour check ("check", { image }) or Match to Reference ("match", { image, reference }),
-  // base64 PNGs. Resolves to { findings, layers }.
-  async colour(kind, body) {
-    try {
-      const res = await this.request("/gpc_ps/colour/" + kind, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      return await res.json();
-    } catch (e) {
-      if (/^40[45]/.test(e.message)) throw new Error("This ComfyUI predates the colour check: update the pack and restart ComfyUI.");
-      throw e;
-    }
-  }
-
   // Stops a prompt: settles the wait at once, then asks the server to drop it.
   // Whether the server let go is a separate question, answered by where().
   cancel(promptId) {
@@ -203,8 +187,11 @@ class ComfyClient {
           if (!entry) return;
           const status = entry.status || {};
           if (status.status_str === "error") {
-            const err = (status.messages || []).find((m) => m[0] === "execution_error");
-            finish(reject, new Error(err ? err[1].exception_message : "Execution failed"));
+            const messages = status.messages || [];
+            const err = messages.find((m) => m[0] === "execution_error");
+            // Stopped from ComfyUI itself (or a missed socket message): say so, not "failed".
+            const interrupted = !err && messages.some((m) => m[0] === "execution_interrupted");
+            finish(reject, new Error(err ? err[1].exception_message : interrupted ? "Cancelled" : "Execution failed"));
           } else if (status.completed !== false) {
             finish(resolve, entry);
           }

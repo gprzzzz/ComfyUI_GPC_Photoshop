@@ -140,7 +140,8 @@ Good to know:
   stays locked until ComfyUI's queue drops the job.
 - Magnific sometimes refuses a request for a moment ("Error consuming credits", even with credits to
   spare). The node retries twice; if it's still refused, the results already started still come back,
-  with a note.
+  with a note. A result Magnific rejects (usually its safety filter) is left out the same way, and a
+  brief network drop while waiting is waited out instead of losing results you've paid for.
 - **Check credits ↗** under the button opens your Magnific API keys page, which shows your balance.
 - Nano Banana has no seed: each run differs.
 
@@ -157,27 +158,6 @@ One-click effects on the **whole image**, whatever is selected. The result goes 
   [Install](install.md#5-dlss-5-optional)); images larger than 7680 × 4320 are refused.
 
 ![The house before, and after Enhance with DLSS5](images/example-post.jpg)
-
-### Colour check
-
-**Check colours** measures the visible image against the targets for an arch-viz render: sky
-195–225° HSB (aim 210° `#4E7CB0` at the top of the sky, 203° `#83B4D2` at the horizon), foliage
-~70–120° with a narrow spread (aim 82° `#4E5D34`), blacks no lighter than 0–10%, whites at the 98th
-percentile between 75% and 91%. Each check is listed with a coloured dot, and sky and foliage also
-show swatches with the hex it measured against the hex to aim for.
-
-**Match to reference** does the same reading against a reference image you pick, and lists what it
-would shift.
-
-**Add N fixes as adjustment layers** builds a group called *GPC colour check*: native adjustment
-layers, one per change, each named for what it does and how — for example
-`Foliage hue 66°→82° (Hue/Sat Yellows, Blend If 200–230)`. Nothing is baked in, so you can dial any
-layer back or delete it. The panel works the way a colourist would, with HSL qualifiers, Blend If,
-Color Range and Levels/Curves rather than lifting a whole range by mask.
-
-Corrections are deliberately bounded: ±15° of hue, ±25 of saturation, gamma 0.75–1.35, 6 levels for
-the green/magenta line, and 50% for colourful blacks. If the reading is further out than that, the
-render is the thing to fix.
 
 ## Tips
 

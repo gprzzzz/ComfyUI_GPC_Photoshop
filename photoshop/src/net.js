@@ -41,6 +41,9 @@ function request(href, { method = "GET", headers = {}, body, timeout = 30000 } =
         });
       });
       res.on("error", reject);
+      // A body cut off midway (the timeout below, or the server going away) ends with
+      // "aborted" and no "end" on older Node, which would leave this never settling.
+      res.on("aborted", () => reject(new Error(`Can't reach ${url.origin}: the answer was cut off`)));
     });
     req.setTimeout(timeout, () => req.destroy(new Error(`no answer for ${Math.max(1, Math.round(timeout / 1000))}s`)));
     req.on("error", (e) => reject(new Error(`Can't reach ${url.origin}: ${e.code || e.message}`)));

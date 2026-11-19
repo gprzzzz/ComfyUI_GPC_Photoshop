@@ -139,3 +139,17 @@ test("http.request gets plain options and a callback, never a URL object", async
     server.close();
   }
 });
+
+test("an answer cut off midway rejects instead of hanging", async () => {
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json", "Content-Length": "1000" });
+    res.write("{\"partial\":");
+    setTimeout(() => res.destroy(), 20);
+  });
+  const url = await listen(server);
+  try {
+    await assert.rejects(request(url + "/x"), /Can't reach/);
+  } finally {
+    server.close();
+  }
+});

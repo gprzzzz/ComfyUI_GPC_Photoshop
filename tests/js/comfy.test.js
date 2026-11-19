@@ -169,3 +169,16 @@ test("where() reads ComfyUI's queue, and knows when there's no answer", async ()
   await new Promise((resolve) => server.close(resolve));
   assert.deepStrictEqual(await client.where("p1"), { state: "unknown" });
 });
+
+test("a run interrupted from ComfyUI reads as cancelled, not failed", async () => {
+  const server = http.createServer((req, res) => {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ p2: { status: { status_str: "error", completed: false, messages: [["execution_start", {}], ["execution_interrupted", {}]] }, outputs: {} } }));
+  });
+  const url = await new Promise((resolve) => server.listen(0, () => resolve(`http://127.0.0.1:${server.address().port}/`)));
+  try {
+    await assert.rejects(new ComfyClient(url).wait("p2"), /^Error: Cancelled$/);
+  } finally {
+    server.close();
+  }
+});

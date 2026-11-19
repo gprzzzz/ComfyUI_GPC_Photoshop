@@ -124,12 +124,6 @@ async function openAsDocument(buffer, name, resolution) {
   }
 }
 
-// Adds a group called `name` at the top of document `docId` holding adjustment
-// layers (the colour check's specs, bottom to top). Resolves to the group's id.
-function addAdjustments(docId, name, layers) {
-  return host("gpcAddAdjustments", docId, name, layers);
-}
-
 function removeLayer(docId, layerId) {
   return host("gpcRemoveLayer", docId, layerId);
 }
@@ -156,7 +150,6 @@ module.exports = {
   stackShow,
   bake,
   openAsDocument,
-  addAdjustments,
   removeLayer,
   readFile,
   pickImageFile,

@@ -48,6 +48,8 @@ POLL_SECONDS = 2.0
 START_GAP_SECONDS = 1.0
 RETRY_SECONDS = (3.0, 8.0)
 TIMEOUT_SECONDS = 1800
+# Polls in a row without an answer before a task is given up on (~1 minute with timeouts).
+POLL_ERRORS = 8
 
 
 def nearest_ratio(width, height, ratios):
@@ -285,25 +287,48 @@ class GPCMagnificNanoBanana:
         source = Image.open(io.BytesIO(pngs[0]))
         results = {}
         done = []
+        failed = set()
+        errors = {}  # task -> polls in a row that got no usable answer
         start = time.monotonic()
-        while len(results) < len(tasks):
+        while len(results) + len(failed) < len(tasks):
             comfy.model_management.throw_exception_if_processing_interrupted()
             if time.monotonic() - start > TIMEOUT_SECONDS:
                 raise RuntimeError("Magnific took more than 30 minutes; the results may still appear in your Magnific history.")
             time.sleep(POLL_SECONDS)
             for task in tasks:
-                if task in results:
+                if task in results or task in failed:
                     continue
-                data = _request("GET", f"{API}{spec['path']}/{task}", key)["data"]
+                # The results are paid for once started, so a dropped connection or a
+                # 5xx while polling is waited out rather than thrown away.
+                try:
+                    data = _request("GET", f"{API}{spec['path']}/{task}", key)["data"]
+                    image = None
+                    if data["status"] == "COMPLETED" and data.get("generated"):
+                        image = Image.open(io.BytesIO(_request("GET", data["generated"][0], timeout=120, raw=True)))
+                except (MagnificError, RuntimeError, OSError, ValueError, KeyError) as e:
+                    if isinstance(e, MagnificError) and not e.retryable:
+                        raise
+                    errors[task] = errors.get(task, 0) + 1
+                    if errors[task] >= POLL_ERRORS:
+                        raise RuntimeError(f"Magnific stopped answering ({e}); the results may still appear in your Magnific history.") from None
+                    logging.warning(f"[GPC Photoshop] Magnific poll failed ({e}); trying again")
+                    continue
+                errors.pop(task, None)
                 if data["status"] == "FAILED":
-                    raise RuntimeError("Magnific: the generation failed (often the safety filter, or a prompt it can't do).")
-                if data["status"] == "COMPLETED" and data.get("generated"):
-                    results[task] = fit_result(Image.open(io.BytesIO(_request("GET", data["generated"][0], timeout=120, raw=True))), source)
+                    failed.add(task)
+                    if len(failed) == len(tasks):
+                        raise RuntimeError("Magnific: the generation failed (often the safety filter, or a prompt it can't do).")
+                    notify(f"{len(failed)} of {len(tasks)} results failed at Magnific (often the safety filter).")
+                    progress.update(1)
+                elif image is not None:
+                    results[task] = fit_result(image, source)
                     done.append(task)
                     logging.info(f"[GPC Photoshop] {model} {body['resolution']}: result {len(done)} of {len(tasks)} after {time.monotonic() - start:.0f} s")
                     announce(results[task], len(done) - 1, len(tasks))
                     progress.update(1)
 
+        if not done:
+            raise RuntimeError("Magnific: the generation failed (often the safety filter, or a prompt it can't do).")
         out = [results[t] for t in done]
         size = out[0].size
         tensors = [torch.from_numpy(np.asarray(im.resize(size, Image.LANCZOS) if im.size != size else im, dtype=np.float32) / 255.0) for im in out]
